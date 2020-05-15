@@ -1,0 +1,90 @@
+<!--
+/*  Collector (Garcia, Kornell, Kerr, Blake & Haffey)
+    A program for running experiments on the web
+    Copyright 2012-2016 Mikey Garcia & Nate Kornell
+
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License version 3 as published by
+    the Free Software Foundation.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>
+ 		
+		Kitten release (2019) author: Dr. Anthony Haffey (a.haffey@reading.ac.uk)		
+*/  
+-->
+<head>
+
+<style>
+body, html {
+  height: 100%;
+}
+</style>
+
+
+<head>
+	<link rel="shortcut icon" type="image/x-icon" href="collector.ico.png" />	
+</head>
+
+<body>
+
+<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+	<link rel="stylesheet" href="libraries/bootstrapCollector.css">
+	<script src="libraries/jquery-3.3.1.min.js"></script>
+	<script src="libraries/papaparse.4.3.6.min.js"></script>
+	<script src="libraries/popper.min.js"></script>
+	<script src="libraries/bootstrap.4.0.min.js"></script>
+</head>
+<div class="jumbotron">
+
+	
+
+  <h1 class="display-4">Which version of Collector do you want to use?</h1>
+  <hr class="my-4">
+  All your experiment resources are on dropbox, so you can swap versions when developing, but do not swap versions once you start testing participants.
+  <hr class="my-4">
+	
+	<div class="accordion" id="accordionExample">
+		<div class="card">
+			<div class="card-header" id="headingOne">
+				<h2 class="mb-0">
+					<button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+						<h1 class="text-secondary">Deprecated (keep using these for experiments you've already started)</h1>
+					</button>
+				</h2>
+			</div>
+			<div id="collapseOne" class="collapse" aria-labelledby="headingOne" data-parent="#accordionExample">
+				<a class="btn btn-secondary btn-lg" href="0" role="button">Kitten - 0</a>
+				</p>
+				<p class="lead">
+					<a class="btn btn-secondary btn-lg" href="1" role="button">Kitten - 1</a> Should be a bit smoother for brand new users
+				</p>
+				<p class="lead">
+					<a class="btn btn-secondary btn-lg" href="2" role="button">Kitten - 2</a> Much smoother registering and deregistering of users and experiments on multiple servers
+				</p>					
+				
+			</div>
+		</div>
+		<div class="card">
+			<div class="card-header" id="headingTwo">
+				<h2 class="mb-0">
+					<button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapseTwo" aria-expanded="true" aria-controls="collapseTwo">
+						<h1 class="text-primary">For new experiments</h1>
+					</button>
+				</h2>
+			</div>
+			<div id="collapseTwo" class="collapse show" aria-labelledby="headingTwo" data-parent="#accordionExample">
+				<div class="card-body">
+					<a class="btn btn-primary btn-lg" href="3" role="button">Kitten - 3</a> Decryption of batches of data should be smoother.
+				</div>
+			</div>
+		</div>		
+	</div>	
+</div>
