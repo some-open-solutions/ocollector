@@ -1,0 +1,4 @@
+["When editing sheets, try pressing F2 twice - on many machines you'll be able to see all the text in the cell and be able to edit it more easily.",
+"You can have multiple conditions, just make sure that they have different <b>names</b>",
+"Try to avoid using spaces in column headers when possible, and use _ instead",
+"When putting inputs into the <b>graphic</b> trialtype editor, sometimes blank values not only are valid, but actually preferable. For example, it may be better to not set a width for a text element, if you want the text element to be as wide as the text. If you set a width, the text will wrap around the set width, which may or may not be what you want."]

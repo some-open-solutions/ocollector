@@ -1,0 +1,25 @@
+<image src="https://www.open-collector.org/logos/alpha.png" style="width:20px; height:20px" title="This is the alpha release of Collector" id='version_logo'>
+						<script>
+
+var orig_filter = $("#version_logo").css("filter");
+$("#version_logo").on("load",function(){
+	$("#version_logo").css("filter",'grayscale(100%)');
+	setTimeout(function(){
+		setTimeout(function(){
+			setTimeout(function(){
+				$("#version_logo").css("filter",orig_filter);
+			}, 400);
+			$("#version_logo").css("filter",'grayscale(100%)');
+		}, 400);
+		$("#version_logo").css("filter",orig_filter);
+	}, 400);
+});	
+	
+
+$("#version_logo").hover(function(){
+	$("#version_logo").css("filter",'grayscale(100%)');	
+}, function(){
+	$("#version_logo").css("filter",orig_filter);
+});
+
+</script>

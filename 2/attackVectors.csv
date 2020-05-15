@@ -1,0 +1,3 @@
+Description,Likelihood,Impact,Contingency - to do if happens,Response - how to prevent,Implemented?
+Someone is intercepting transmission between participant and the server,Unknown - but see impact and response,None - see response,,"Https security protocols in place, and participant data is encrypted on the participant's computer using a public key, so cannot be decrypted by anyone except the researcher",Yes
+Someone else intercepting transmission between researcher and the server,Unknown - but see impact and response,"Limited, as the researcher's private key is never transmitted",,Https security protocols in place,Yes

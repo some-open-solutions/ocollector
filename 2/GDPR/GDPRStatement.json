@@ -1,0 +1,12 @@
+{
+  "data_location":[
+    "Google Drive",
+    "One Drive",
+    "Locally"
+  ],
+  "pii":{
+    "no_pii":"There were no requirements to protect that data as <b>no personally identifiable information</b> such as names, e-mail addresses or birthdates was requested in this study.",
+    "stored_within_europe":"The servers storing the data are within Europe...",
+    "client_encrypted":"The data was encrypted on the participant's computer using javascript algorithms ___WHICH_ALGORITHMS___ and the researcher's public key. This public key can only be used for encryption and cannot be used for decryption. To decrypt the data the researcher needs to log in and decrypt their associated private key which in turn can decrypt the participant's data. As encryption and decryption are done using javascript on the participant's and researcher's computers, at no point is any personally identifiable information present on [[data_location]], only encrypted information that the service providors would not be able to access without the researcher's code that is used to decrypt their private key."
+  }
+}

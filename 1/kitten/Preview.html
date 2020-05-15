@@ -1,0 +1,82 @@
+<!--
+/*  Collector (Garcia, Kornell, Kerr, Blake & Haffey)
+    A program for running experiments on the web
+    Copyright 2012-2020 Mikey Garcia & Nate Kornell
+
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License version 3 as published by
+    the Free Software Foundation.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>
+
+		Kitten release (2019-2020) author: Dr. Anthony Haffey (a.haffey@reading.ac.uk)
+*/
+
+-->
+<script>
+if(typeof(dev_obj) == "undefined"){
+  dev_obj = {};
+}
+dev_obj.simulator_on = true;
+</script>
+<table id="simulator_table">
+  <tr>
+    <td>
+      <table>
+        <tr>
+          <td id="Presentation">
+            <div id="ExperimentContainer" style="text-align:center; margin:auto">
+              <div id="sql_experiment_div"></div>
+              <script>
+              $("#sql_experiment_div").load("RunStudy.html");
+              </script>
+              <div id="preview_message">Select an experiment to be able to start a preview. Once you press start the experiment will buffer to the level of trials you've selected.</div>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td id="run_stop_buttons" align="centre">
+            <button type="button" id="run_button" class="btn btn-primary">Run Simulation</button>
+            <button type="button" id="stop_button" class="btn btn-primary">Stop Simulation</button>
+            <button type="button" id="shuffle_off_button" class="btn btn-primary" title='Click to turn Shuffle OFF'>Shuffle</button>
+            <button type="button" id="shuffle_on_button" class="btn btn-outline-primary" title='Click to turn Shuffle ON' style="display:none">Shuffle</button>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<script src="IndexTabs/Studies/simulatorFunctions.js"></script>
+<script src="IndexTabs/Studies/simulatorActions.js"></script>
+<script>
+presentation_style_default = $("#Presentation")[0].style;
+
+$("#shuffle_off_button").on("click",function(){			// code for disabling shuffling
+	$("#shuffle_on_button").show();
+	$("#shuffle_off_button").hide();
+});
+$("#shuffle_on_button").on("click",function(){			// code for enabling shuffling
+	$("#shuffle_on_button").hide();
+	$("#shuffle_off_button").show();
+});
+
+$("#stop_button").on("click",function(){
+	$("#experiment_div").hide();
+	$(".trial_iframe").remove();
+	exp_json.trial_no = 0;
+	exp_json.post_no  = 0;
+	$("#stim_listing").css("width","0%");
+	$("#stim_progress").show();
+	$(".progress").hide();
+	$("#experiment_progress").css("width","0%");
+	delete(stim_interval);
+});
+block_save = true;
+</script>

@@ -1,0 +1,98 @@
+<!--
+/*  Collector (Garcia, Kornell, Kerr, Blake & Haffey)
+    A program for running experiments on the web
+    Copyright 2012-2016 Mikey Garcia & Nate Kornell
+
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License version 3 as published by
+    the Free Software Foundation.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>
+
+		Kitten release (2019) author: Dr. Anthony Haffey (a.haffey@reading.ac.uk)
+*/
+-->
+<head>
+
+<style>
+body, html {
+  height: 100%;
+}
+</style>
+
+
+<head>
+	<link rel="shortcut icon" type="image/x-icon" href="logos/collector.ico.png" />
+</head>
+
+<body>
+
+
+
+<meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+	<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/4.4.0/papaparse.min.js"></script>
+    <link rel="stylesheet" href="https://www.amcharts.com/lib/3/ammap.css" type="text/css" media="all" />
+    <script src="https://www.amcharts.com/lib/3/ammap.js"></script>
+    <script src="https://www.amcharts.com/lib/3/maps/js/worldLow.js"></script>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="   crossorigin="anonymous"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.0/umd/popper.min.js"></script>
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.0/css/bootstrap.min.css">
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.0/umd/popper.min.js"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.0/js/bootstrap.min.js"></script>
+  <script type="text/javascript" src="../libraries/bootbox.4.4.0.min.js"></script>
+  <script type="text/javascript" src="../libraries/bootbox.4.4.0.min.js"></script>
+</head>
+
+<style>
+	#class_login_card{
+		margin: 0 auto; /* Added */
+		float: none; /* Added */
+		margin-bottom: 10px; /* Added */
+	}
+</style>
+
+
+<div id="class_login_card" class="card text-primary bg-white align-middle" style="max-width: 36rem; position: relative; top: 50%; transform: translateY(-50%); ">
+  <div class="card-header bg-primary text-white">Classroom ID</div>
+  <div class="card-body">
+    <input id="classroom_id" class="form-control" style="margin:3px">
+    <button class="btn btn-primary" type="button" style="margin:3px" id="login_button"	value>login</button>
+  </div>
+</div>
+<div id="student_content"></div>
+
+<script>
+var rooms = {};
+$.get("Rooms.csv",function(result){
+  var rooms_csv = Papa.parse(result).data;
+  // convert this into an object
+  rooms_csv.forEach(function(room){
+    rooms[room[0]] = room[1]
+  });
+});
+$("#login_button").on("click",function(){
+  var this_room = $("#classroom_id").val().toLowerCase();
+  if(typeof(rooms[this_room]) !== "undefined"){
+    document.location.href = rooms[this_room];
+  } else {
+    bootbox.alert("this room doesn't appear to exist");
+  }
+});
+$('#classroom_id').keypress(function (e) {
+  if (e.which == 13) {
+    $("#login_button").click();
+    return false;    //<---- Add this line
+  }
+});
+</script>

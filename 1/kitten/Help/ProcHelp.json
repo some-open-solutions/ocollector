@@ -1,0 +1,27 @@
+{
+	"item":{
+    "subtitle":"The item(s) from the stimuli file",
+    "text":"Specify here which row(s) you want to refer to in the stimuli sheet. If you want to refer to just one row, just write the row number. If you want to refer to multiple rows, write <b>to</b>, e.g. '2 to 5'. You should also be able to use commas, e.g. '2,3,5'. "
+  },
+  
+  "description":{
+		"subtitle":"deprecated",
+		"text":"please change this column header to <b>name</b>."
+	},
+	"trial type":{
+    "subtitle":"Which trialtype do you want?",
+    "text":"Specify one of the trialtypes out of the trialtypes listed below."
+  },
+	"max time":{
+    "subtitle":"In milliseconds",
+    "text":"<b>User</b> will leave the trial going as long as it takes the participant to complete it. You can specify a time limit in <b>milliseconds</b> though. Be careful when specifying this. This will start from when the trial is presented to the participant. Unless you are presenting a very simple trial, you may want to use a <b>Trial.start_timer()</b> within the trialtype code in the experiment."
+  },
+	"text":{
+    "subtitle":"Mainly for instruct trialtypes",
+    "text":"You can refer to this in any trialtype with <b>{{text}}</b>, but typically this is what you would want presented in an <b>instruct</b> trialtype."
+  },
+	"shuffle 1":{
+    "subtitle":"randomise trial order",
+    "text":"If you would like some trials shuffled together, write the same word next to the trials you want randomised together. For example, if I wanted the practice trials shuffled together, then I would write the word 'practice' in this column next to each of the practice trials"
+  }
+}

@@ -1,0 +1,203 @@
+<!--
+
+    Collector (Garcia, Kornell, Kerr, Blake & Haffey)
+    A program for running experiments on the web
+    Copyright 2012-2016 Mikey Garcia & Nate Kornell
+
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License version 3 as published by
+    the Free Software Foundation.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>
+
+		Kitten release (2019) author: Dr. Anthony Haffey (a.haffey@reading.ac.uk)
+-->
+<style>
+#institute_div > .modal-body{
+  height:80%;
+  overflow-y: auto;
+}
+
+#github_login,
+#ocollector_login{
+  display:none;
+}
+
+.login_register_card{
+  margin: 0 auto; /* Added */
+  float: none; /* Added */
+  margin-bottom: 10px; /* Added */
+}
+
+
+</style>
+
+
+<script>
+function check_errors(){
+  switch(dev_obj.context){
+    case "server":
+      $.post("checkErrors.php",{
+        //nothing
+      },function(error_message){
+        if(error_message !== ""){
+          bootbox.alert(error_message);
+        }
+      });
+      break;
+  }
+}
+</script>
+
+
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
+<div class="modal" tabindex="-1" role="dialog" id="login_modal">
+	<div id="login_register_span"  style="height:90%">
+		<div class="card text-primary bg-white align-middle login_register_card" style="max-width: 36rem; position: relative; top: 50%; transform: translateY(-50%); ">
+			<div class="card-header bg-primary text-white">				
+				<button type="button" class="close" id="dismiss_login_btn">&times;</button>
+				<h4 class="modal-title">Collector Kitten Login</h4>
+			</div>
+			<div class="card-body">
+				<span id="username"></span>
+				<div class="row">
+					<input id="username_input" name="user_email" type="email" class="form-control" placeholder="email">
+				</div>
+				<div class="row">
+						<input id="password_input" name="user_password" type="password" class="form-control" placeholder="password">
+				</div>
+				<div class="row">
+					<div class="g-recaptcha" data-sitekey="6LelCO4UAAAAAFEh_KGJlAQ5lthFI-kDY4_kv33_"></div>
+				</div>
+				<div class="row">
+					<input class="btn btn-primary" type="button" style="margin:3px" id="login_button" 		value="login">
+					<button type="button" class="btn btn-primary" style="display:none" data-toggle="modal" data-target="#institute_div" onclick="list_institutes()" id="register_map_button"> Register </button>
+					<input class="btn btn-primary" type="button" style="margin:3px" id="register_button" value="register" style="display:none">
+
+					<input class="btn btn-primary" type="button" style="margin:3px" id="forgot_button" 	value="forgot password">
+
+
+					<!-- hidden inputs -->
+					<input type="submit" class="collectorButton" id="forgot_button_submit" name='login_type' value="forgot" style="display:none">
+					<input  type="submit" class="collectorButton" id="login_button_submit" name='login_type' value="login" style="display:none">
+
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!--
+To Do:
+
+-when clicking on submit, update the hidden inputs or trigger APIs depending on context
+
+-->
+
+<script>
+$("#dismiss_login_btn").on("click",function(){
+	$("#login_modal").fadeOut();
+});
+$("#forgot_button").on("click",function(){
+	var email_val = $("#username_input").val();
+	bootbox.prompt({
+		title: "Please confirm your email:",
+		value: email_val,
+		callback: function (result) {
+			$("#forgot_button_submit").click();
+		}
+	});
+});
+$("#login_button").on("click",function(){
+  switch(dev_obj.context){
+    case "server":	
+		case "github":				
+			$.post("https://ocollector.org/kitten/login.php",{
+				login_type: 					  "login",
+				user_email: 					  $("#username_input").val(),
+				user_password: 				  $("#password_input").val(),
+				"g-recaptcha-response": $("#g-recaptcha-response").val()
+			},function(login_obj){
+				console.dir(login_obj);
+				login_obj = JSON.parse(login_obj);
+				
+				var error_msg = login_obj.error_msg;				
+				
+				bootbox.alert(error_msg);
+				if(error_msg == "Robot verification failed, please try again."){
+					grecaptcha.reset();
+				} else if(error_msg == "You have succesfully logged in."){
+				
+					window.localStorage.setItem("session_code",
+																			login_obj.session_code);
+					window.localStorage.setItem("user_email",
+																			login_obj.user_email);
+
+					$("#collector_account_email").html(login_obj.user_email);
+					$("#login_modal").fadeOut();
+					$("#login_btn").hide();
+					$("#logout_btn").show();
+				}				
+			});      
+      break;
+    case "gitpod":
+		case "localhost":
+			bootbox.alert("You need to be on an official collector webpage to login either on: <br><br> <a href='https://some-open-solutions.github.io'>https://some-open-solutions.github.io</a> <br><br> or <br><br> <a href='https://ocollector.org/web/'>https://ocollector.org/web/</a>");
+      break;			
+  }
+});
+
+
+
+$("#register_button").on("click",function(){
+  // checks
+	// password long enough?
+	if($("#password_input").val().length < 8){
+		bootbox.alert("Your password is too short. Please make a password of at least 8 characters. Ideally with a mixture of capital letters, numbers and characters.");
+	} else {
+		bootbox.confirm("Making sure you don't lose your password is extremely important! Your password is used as part of the encryption and decryption of your data. <br><br>In short, if you lose your password then you lose your data. <br><br> Once you've made sure your password will not be lost, click on <b>OK</b> to proceed",function(result){
+			if(result){
+				bootbox.prompt({
+					title: "Please confirm your password:",
+					inputType: 'text',
+					callback: function (result) {
+						
+						if(result == $("#password_input").val()){
+							$.post("https://ocollector.org/kitten/login.php",{
+								login_type: 					  "register",
+								user_email: 					  $("#username_input").val(),
+								user_password: 				  $("#password_input").val(),
+								"g-recaptcha-response": $("#g-recaptcha-response").val()
+							},function(login_obj){
+								console.dir(login_obj);
+								login_obj = JSON.parse(login_obj);								
+								bootbox.alert(login_obj.error_msg);
+								if(login_obj.error_msg == "Robot verification failed, please try again."){								
+									grecaptcha.reset();									
+								} else {
+									$("#login_modal").fadeOut();
+								}
+							});
+						} else {
+							alert("Passwords did not match.");
+						}						
+					}
+				});
+			}
+		});
+	}
+});
+$("#register_proceed_button").on("click",function(){
+  $("#country_selected").click();
+});
+$("#skip_map_button").on("click",function(){
+  $("#register_submit").click();
+});
+</script>
