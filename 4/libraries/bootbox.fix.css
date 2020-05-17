@@ -1,0 +1,5 @@
+/*	fix to close button being messed up, by  Paweł Rymsza  on https://stackoverflow.com/questions/48529880/bootbox-dialog-modal-bootstrap-4
+*/
+.bootbox .modal-header{
+	display: block;
+}

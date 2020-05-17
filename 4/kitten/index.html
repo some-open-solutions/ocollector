@@ -1,0 +1,221 @@
+<head>
+  <link rel="shortcut icon" type="image/x-icon" href="../logos/collector.ico.png" />
+	<meta charset="utf-8">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+</head>
+<!--
+    Collector (Garcia, Kornell, Kerr, Blake & Haffey)
+    A program for running experiments on the web
+    Copyright 2012-2016 Mikey Garcia & Nate Kornell
+
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License version 3 as published by
+    the Free Software Foundation.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>
+
+	Kitten release (2019-20) author: Dr. Anthony Haffey (a.haffey@reading.ac.uk)
+-->
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+<style>
+#top_navbar{
+  height:50px;
+  padding:5px;
+}
+</style>
+
+<!--
+
+The following system is to avoid the need for php's require functionality to embed pages within pages. It should also (hopefully) avoid some of the errors you get if you have link and script tags in a page. 
+
+-->
+<script src="../libraries/jquery-3.3.1.min.js"></script>
+<script src= "../libraries/bootstrap.4.0.min.js"></script>            
+<script src= "../libraries/bootbox.4.4.0.min.js"></script>            
+<script src= "../libraries/popper.min.js"></script>
+
+<link rel="stylesheet" type="text/css" href="../libraries/bootstrapCollector.css">
+<link rel="stylesheet" type="text/css" href="../libraries/bootbox.fix.css">
+
+<script src= "../libraries/dropbox.2.5.13.min.js"></script>
+<script src= "../libraries/dropbox.dropins.js"></script>
+<script src= "../libraries/papaparse.4.3.6.min.js"></script>
+<script src= "../libraries/ace-master/ace.js"></script>
+<script src= "../libraries/ace-master/ext-language_tools.js"></script>
+<script src= "Studies/handsontables/handsontables.full.js"></script>
+<script src= "Studies/HandsontableFunctions.js"></script>
+
+<link rel="stylesheet" type="text/css" href="Studies/handsontables/handsontables.full.css">
+
+<script src= "jsFunctions.js"></script>
+<script src= "Code/BrowserCheck.js"></script>
+<script src= "CollectorMap.js"></script>
+
+<script>
+collector_map = this_map('');
+</script>
+
+<script src="Code/initiateCollector.js"></script>
+
+<link rel="stylesheet" type="text/css" href="Style.css">
+
+
+<!--
+<sc ript src = "Code/initiateCollector.js"></sc ript>
+<sc ript src = "ContextStart.js"></sc ript>
+<sc ript src = "MobileCheck.js"></sc ript>
+-->
+
+<nav class="navbar fixed-top navbar-light bg-primary navbar-expand-lg" id="top_navbar">
+  <div id="logo_div"></div>
+  <div class="collapse navbar-collapse">
+    <ul class="navbar-nav mr-auto">
+      <div id="page_selected"></div>
+    </ul>
+  </div>
+  <a href="https://collectalk.com/categories/bugs-and-errors" target="_blank" style="margin:2px">
+    <button class="btn btn-primary">Report Bug</button>
+  </a>
+  <a href="https://collectalk.com/" target="_blank" style="margin:2px">
+    <button class="btn btn-primary">Forum</button>
+  </a>
+  <a href="https://docs.google.com/document/d/1SKYIJF1dAjMDS6EHUIwfZm2KQVOzx17S6LbU_oSGxdE/edit?usp=sharing" target="_blank" style="margin:2px">
+    <button class="btn btn-primary">Documentation</button>
+  </a>
+  <button class="btn btn-outline-primary bg-white" id="help_btn" style="margin:2px; font-weight:bold">Help</button>
+  <div id="logout_div"></div>
+</nav>
+<table id="content_table" style="width:100%">
+  <tr>
+    <td id="content_area">
+    </td>
+    <script>
+      var navbar_names  = ["Studies","Surveys","Boost","Data"];
+      var pages         = ["Studies/Studies.html",
+                           "Surveys/Surveys.html",
+                           "Boost/Boost.html",
+                           "Data/Data.html"];
+      navbar_names.forEach(function(this_name,index){
+        $("#content_area").append("<div class='collapse multi-collapse' style='width:100%' id='collapse_" + this_name +"' >");
+        $("#collapse_" + this_name).load(pages[index]);
+      });
+
+    </script>
+    <td id="help_area" class="help_class"></td>
+  </tr>
+</table>
+<div id="dropbox_initiate_div"></div>
+<div id="login_div"></div>
+<script>
+navbar_html = "";
+navbar_names.forEach(function(name,index){
+  navbar_html += '<label class="btn btn-primary select_page" id="option_'+name+'"  data-toggle="collapse" href="#collapse_'+name+'" role="button" aria-expanded="false" aria-controls="#collapse_'+name+'">'+
+    '<input type="radio" style="display:none" name="options" autocomplete="off" >'+name+
+  '</label>';
+});
+$("#page_selected").html(navbar_html);
+
+$(".select_page").on("click",function(){
+
+  //hide everything
+  $('.collapse').hide();//collapse('hide');
+
+  //show the current page
+  $("#collapse_" + this.id.replace("option_","")).show();
+
+  //$("#collapse_" + ).show();
+  //that is not the associated page
+
+  $('.select_page').css("font-weight","normal");
+  $(this).css("font-weight","bold");
+  $('.select_page').removeClass("bg-white");
+  $('.select_page').removeClass("text-primary");
+  $(this).addClass("bg-white");
+  $(this).addClass("text-primary");
+  var this_id = this.id;
+});
+if($("#collector_account_email").html() == "--undefined--"){
+  highlight_account("dropbox_account_email");
+  highlight_account("collector_account_email");
+}
+$("#help_area").load("Help/Help.html");
+$("#logo_div").load("../logos/logo.html");
+$("#logout_div").load("Platforms.html");
+$("#login_div").load("LoginInterface.html");
+
+</script>
+
+<script>
+
+// the below was meant to be a tidier system
+files_pipeline = {
+  files : [
+           /*
+           ["../libraries/bootstrap.4.0.min.js"],             
+           ["../libraries/bootbox.4.4.0.min.js"],             
+           ["../libraries/popper.min.js"],
+           ["../libraries/bootstrapCollector.css"],
+           ["../libraries/bootbox.fix.css"],
+           ["../libraries/dropbox.2.5.13.min.js"],
+           ["../libraries/dropbox.dropins.js"],
+           ["../libraries/papaparse.4.3.6.min.js"],
+           ["../libraries/ace-master/ace.js"],
+           ["../libraries/ace-master/ext-language_tools.js"],
+           ["Studies/handsontables/handsontables.full.js"],
+           ["Studies/HandsontableFunctions.js"],
+           ["Studies/handsontables/handsontables.full.css"],
+           ["jsFunctions.js"],
+           ["Code/BrowserCheck.js"],
+           ["CollectorMap.js"],
+           ["collector_map = this_map('');"],
+           ["Style.css"],
+           */
+           ["ContextStart.js"],
+           ["MobileCheck.js"]],
+  activate:function(){
+  
+    var this_file = files_pipeline.files.shift();
+    if(this_file[0].indexOf(".js") !== -1){           // i.e. js
+      $.getScript(this_file,function(){
+        if(files_pipeline.files.length > 0){
+          files_pipeline.activate();
+        }
+      });
+    } else if(this_file.length > 1){                  // i.e. html
+      $(this_file[0]).load(this_file[1],function(){
+        if(files_pipeline.files.length > 0){
+          files_pipeline.activate();
+        }
+      });
+    } else if(this_file[0].indexOf(".css") !== -1) {  // i.e. css
+      $.ajax({
+        url: this_file,
+        dataType: 'text',
+        success: function(data) {
+        
+          $('<style type="text/css">\n' + data + '</style>').appendTo("head");
+          if(files_pipeline.files.length > 0){
+            files_pipeline.activate();
+          }                 
+        }                  
+      });
+    } else {                                          // code to run
+      eval(this_file[0]);
+      if(files_pipeline.files.length > 0){
+        files_pipeline.activate();
+      } 
+    }
+  }
+}
+files_pipeline.activate();
+</script>
