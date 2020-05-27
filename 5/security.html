@@ -1,0 +1,40 @@
+<link rel="shortcut icon" type="image/x-icon" href="logos/collector.ico.png" />
+<script>
+	window.jQuery || document.write('<script src="libraries/jquery-3.3.1.min.js"><\/script>');
+</script>
+
+<link rel="stylesheet" href="libraries/bootstrapCollector.css">
+<script type="text/javascript" charset="utf-8" src="libraries/bootstrap.4.0.min.js"></script>
+
+<!-- papaparse -->
+<script type="text/javascript" charset="utf-8" src="libraries/papaparse.4.3.6.min.js"></script>
+
+<h1 class="text-primary">Attack vectors/security</h1>
+If you think there are security issues that need to be addressed, please raise an issue <a href="https://github.com/some-open-solutions/collector-dev/issues"><em>here</em></a>.
+
+<div id="attack_vectors_table"></div>
+<script>
+$.get("attackVectors.csv",function(result){
+  table_data = (Papa.parse(result).data);
+  this_table = '<table class="table">' + 
+                  '<thead>' +
+                  '  <tr>' +
+                  '    <th scope="col">Description</th>' +
+                  '    <th scope="col">Likelihood</th>' +
+                  '    <th scope="col">Impact</th>' +
+                  '    <th scope="col">Response</th>' +
+                  '    <th scope="col">How to prevent</th>' +
+                  '    <th scope="col">Implemented?</th>' + 
+                  '  </tr>' +
+                  '</thead>'+
+                  '<tbody>';
+  for(i = 1; i < table_data.length; i++){
+    this_table += '<tr>';
+    for(j = 0; j < table_data[i].length; j++){
+      this_table += '<td>' + table_data[i][j] + '</td>';
+    }
+    this_table += '</tr>';
+  }
+  $("#attack_vectors_table").html(this_table);
+});  
+</script>

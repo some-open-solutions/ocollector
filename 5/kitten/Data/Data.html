@@ -1,0 +1,428 @@
+<?php
+/*  Collector (Garcia, Kornell, Kerr, Blake & Haffey)
+    A program for running experiments on the web
+    Copyright 2012-2016 Mikey Garcia & Nate Kornell
+
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License version 3 as published by
+    the Free Software Foundation.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>
+
+		Kitten release (2019) author: Dr. Anthony Haffey (a.haffey@reading.ac.uk)
+*/
+if(isset($_SESSION['user_email']) == false){
+	echo "Please log in to access your data.";
+} else {
+
+?>
+
+<style>
+#data_script_editor {
+	height:500px;
+}
+.key_textarea{
+  width:500px;
+  height:500px;
+}
+</style>
+
+
+<!--
+
+Encryption code/interface
+
+-->
+<script src="../libraries/tweetnacl.js"></script>
+<script src="../libraries/tweetnacl-utils.js"></script>
+<script src="../libraries/crypto-js.min.js"></script>
+
+
+<nav class="navbar navbar-primary bg-white fixed-top fixed-top-2">
+  <span> <!-- to block formatting that puts the next button on the far right -->
+    <button class="btn btn-primary" id="js_decrypt_btn">Decrypt file(s)</button>
+    <input type="file" id="fileToLoad" style="display:none" multiple>
+    <button class="btn btn-primary" onclick="encrypt_obj.change_password()">Change password</button>
+    <button class="btn btn-primary" id="google_script_btn">Google Script</button>
+  </span>
+</nav>
+
+
+
+<script>
+$("#google_script_btn").on("click",function(){
+  $.get("Data/Google/CollectorSave.txt",function(google_script){
+    bootbox.alert("//Select and copy the following to a <b>google apps script</b>: <br><br><textarea style='white-space: pre-wrap;' onclick='this.focus();this.select()' readonly='readonly'>" + google_script + "</textarea>");
+  })
+});
+
+$("#js_decrypt_btn").on("click",function(){
+  $("#fileToLoad").val("");
+  $("#fileToLoad").click();
+});
+$("#fileToLoad").on("change",function(){
+  if($("#fileToLoad").val() !== ""){
+    loadFileAsText();
+  }
+});
+
+function loadFileAsText(){
+	encrypt_obj.current_batch = [];
+  function batch_no_batch(batch_no){
+    if(batch_no == -1){
+      batch_no = 0;
+    }
+    if(document.getElementById("fileToLoad").files.length > batch_no + 1){
+			batch_proc   = true;
+      var batch_status = "add";
+    } else {
+			batch_proc   = false;
+      var batch_status = "end";
+    }
+    console.dir("batch_status earlier");
+    console.dir(batch_status);
+    var fileToLoad = document.getElementById("fileToLoad").files[batch_no];
+    var default_filename = document.getElementById("fileToLoad").files[batch_no]
+                                                                .name
+                                                                .toLowerCase()
+                                                                .replace(".txt","");
+    var fileReader = new FileReader();
+    fileReader.onload = function(fileLoadedEvent){
+        var textFromFileLoaded = fileLoadedEvent.target.result;
+        encrypt_obj._decrypt_request(textFromFileLoaded,        //file_content
+                                     default_filename,
+                                     batch_status);
+
+    };
+
+    fileReader.readAsText(fileToLoad, "UTF-8");
+    if(batch_proc){
+      batch_no++;
+      batch_no_batch(batch_no);
+    }
+  }
+	if(document.getElementById("fileToLoad").files.length > 1){
+    batch_no_batch(0);
+  } else {
+		batch_no_batch(-1);
+  }
+}
+
+</script>
+<br><br><br>
+
+<br><br><br>
+<div>
+  <table>
+    <tr>
+      <td>
+        Your Public Key
+      </td>
+      <td>
+        Your encrypted private key
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <textarea class="form-control key_textarea" id="public_key"></textarea>
+      </td>
+      <td>
+        <textarea class="form-control key_textarea" id="private_key"></textarea>
+      </td>
+    </tr>
+  </table>
+</div>
+
+
+
+<!--
+<div id="public_key"></div>
+<div id="private_key"></div>
+-->
+
+
+<script>
+
+encrypt_obj = {
+  _decrypt_request:function(encrypted_content,default_filename,batch_status){
+    encrypt_obj.current_batch.push([default_filename, encrypted_content]);
+    console.dir("batch_status");
+    console.dir(batch_status);
+    switch(batch_status){
+      case "none":
+      case "end":
+        bootbox.prompt({
+          title: "What is your password? (this will never be saved, but is needed)",
+          inputType: "password",
+          callback: function(user_password){
+            if(user_password){
+
+
+              //set up a function that can be called recursively, working through each archived keypair until there are none.
+              function combine_password_key(keys_list,user_password){
+                if(keys_list.length == 0){
+                  bootbox.alert("This password isn't working. Are you sure it's the right password, and that you're decrypting the data with the correct installation of Collector? (i.e. do you have multiple versions of Collector you are conducting research with?");
+                } else {
+                  this_private_key = keys_list.pop();
+                  var decrypted_private_key_obj = CryptoJS.AES.decrypt(master_json.keys.encrypted_private_key, user_password);
+                  try{
+                    var decrypted_private_key = decrypted_private_key_obj.toString(CryptoJS.enc.Utf8);
+                  } catch(error) {
+                    custom_alert(error + " trying with an archived private key");
+                    combine_password_key(keys_list,user_password);
+                  }
+                  try{
+                    all_decrypted = [];
+                    encrypt_obj.current_batch.map(function([default_filename,encrypted_content]){
+                      this_decrypted_message = JSON.parse(encrypt_obj.decrypt(decrypted_private_key,JSON.parse(encrypted_content)));
+                      console.dir("this_decrypted_message");
+                      console.dir(this_decrypted_message);
+                      this_decrypted_message = this_decrypted_message.map(function(row){
+                        try{
+													row["username"] = default_filename;
+													all_decrypted.push(row);
+												} catch(error){
+													//nothing
+												}
+                      });
+                    });
+                    if(encrypt_obj.current_batch.length > 1){
+                      process_decrypted(all_decrypted,"batch");
+                    } else {
+                      process_decrypted(all_decrypted,"single");
+                    }
+                  } catch(error){
+                    custom_alert(error + " trying with an archived private key");
+                    combine_password_key(keys_list,user_password);
+                  }
+                }
+              }
+
+              function process_decrypted(this_decrypted_message,batch_single){
+                response_headers 		 = [];
+                for(var i = 0; i < this_decrypted_message.length ; i++) {
+                  decrypted_data = this_decrypted_message[i];
+                  Object.keys(decrypted_data).forEach(function(header){
+                    if(response_headers.indexOf(header) == -1){
+                      response_headers.push(header);
+                    };
+                  });
+                }
+
+                for(var i =0; i < this_decrypted_message.length; i++){
+                  response_headers.forEach(function(this_header){
+                    if(typeof(this_decrypted_message[i][this_header]) == "undefined"){
+                      this_decrypted_message[i][this_header] = "";
+                    }
+                  });
+                }
+
+
+                if(batch_single == "batch"){
+                  default_filename = "batch"; //ideally this would actually be the experiment name instead; need this encoded when the participant is saving
+                }
+                //download the data file here
+
+                //
+                bootbox.prompt({
+                  title: "What would you like to name this file?",
+                  value: default_filename,
+                  callback: function(result) {
+										if(result){
+											var filename = result.toLowerCase().replace(".csv","") + ".csv";
+											save_csv (filename, Papa.unparse(this_decrypted_message,{
+												quotes: false, //or array of booleans
+												quoteChar: '"',
+												escapeChar: '"',
+												delimiter: ",",
+												header: true,
+												newline: "\r\n",
+												skipEmptyLines: true, //or 'greedy',
+												columns: null //or array of strings
+											}));
+										}
+                  }
+                });
+              }
+              if(typeof(master_json.keys.archived) == "undefined"){
+                master_json.keys.archived = [];
+              }
+							var all_private_keys = []
+              master_json.keys.archived.forEach(function(row){
+                all_private_keys.push(row.encrypted_private_key);
+              });
+              all_private_keys.push(master_json.keys.encrypted_private_key);
+              combine_password_key(all_private_keys,user_password);
+            };
+          }
+        });
+        break;
+      case "add":
+        //do nothing
+        break;
+    }
+  },
+	add_script: function(){
+		bootbox.prompt("Please complete the instructions on how to automatically have your data saved or e-mailed and then copy in the script address below",function(this_url){
+			
+			/* 
+			this functionality will be in version 1
+      master_json.data.save_script = this_url;
+			*/
+			
+    })
+	},
+  archive_keys:function(){
+    var keypair = {
+                    public_key : master_json.keys.public_key,
+                    encrypted_private_key : master_json.keys.encrypted_private_key
+                  };
+    master_json.keys.archived.push(keypair);
+  },
+  change_password:function(){
+    bootbox.dialog({
+      title:"Delete old password",
+      message:"Do you want to delete the old password keys? WARNING IF YOU DO THIS YOU WILL NEVER BE ABLE TO DECRYPT ANY DATA ASSOCIATED WITH THIS PASSWORD AGAIN. If you don't want to delete the old password, but still want a new one, select <b>No</b>",
+      buttons:{
+        yes: {
+          label: "Yes",
+          className: 'btn-danger',
+          callback: function(){
+            encrypt_obj.generate_keys();
+          }
+        },
+        no: {
+          label: "No",
+          className: 'btn-primary',
+          callback: function(){
+            encrypt_obj.archive_keys();
+            encrypt_obj.generate_keys();
+          }
+        },
+        cancel: {
+          label: "Cancel",
+          className: 'btn-secondary',
+          callback: function(){
+            //nothing
+          }
+        },
+      }
+    });
+  },
+  confirm_keys:function(){
+    this_encrypted_message = encrypt_obj.encrypt(receiverPublicKey,"howdy");
+
+    this_encrypted_message = JSON.stringify(this_encrypted_message);
+    this_encrypted_message = JSON.parse(this_encrypted_message);
+
+    bootbox.prompt("Let's quadruple check everything is working - if you put in your password you should see the message 'howdy', which has just been encrypted using your public key",function(user_password){
+      var decrypted_private_key_obj = CryptoJS.AES.decrypt(master_json.keys.encrypted_private_key, user_password);
+      var decrypted_private_key = decrypted_private_key_obj.toString(CryptoJS.enc.Utf8);
+      this_decrypted_message = encrypt_obj.decrypt(decrypted_private_key,this_encrypted_message);
+      bootbox.alert(this_decrypted_message);
+    });
+  },
+  current_batch:[],
+  decrypt: function(receiverSecretKey, encryptedData) {
+    const receiverSecretKeyUint8Array = nacl.util.decodeBase64(
+        receiverSecretKey
+    )
+    const nonce = nacl.util.decodeBase64(encryptedData.nonce)
+    const ciphertext = nacl.util.decodeBase64(encryptedData.ciphertext)
+    const ephemPubKey = nacl.util.decodeBase64(encryptedData.ephemPubKey)
+    const decryptedMessage = nacl.box.open(
+        ciphertext,
+        nonce,
+        ephemPubKey,
+        receiverSecretKeyUint8Array
+    )
+    return nacl.util.encodeUTF8(decryptedMessage)
+  },
+  encrypt: function(receiverPublicKey, msgParams) {  //: string
+    const ephemeralKeyPair = nacl.box.keyPair()
+    const pubKeyUInt8Array =  nacl.util.decodeBase64(receiverPublicKey)
+    const msgParamsUInt8Array = nacl.util.decodeUTF8(msgParams)
+    const nonce = nacl.randomBytes(nacl.box.nonceLength)
+    const encryptedMessage = nacl.box(
+      msgParamsUInt8Array,
+      nonce,
+      pubKeyUInt8Array,
+      ephemeralKeyPair.secretKey
+    )
+    return {
+      ciphertext: nacl.util.encodeBase64(encryptedMessage),
+      ephemPubKey: nacl.util.encodeBase64(ephemeralKeyPair.publicKey),
+      nonce: nacl.util.encodeBase64(nonce),
+      version: "x25519-xsalsa20-poly1305"
+    }
+
+  },
+
+  generate_keys:function(){
+
+
+    //solution at https://medium.com/zinc_work/using-cryptography-tweetnacl-js-to-protect-user-data-intro-tips-tricks-a8e38e1818b5
+    var keypair = nacl.box.keyPair();
+
+    receiverPublicKey = nacl.util.encodeBase64(keypair.publicKey);
+    receiverSecretKey = nacl.util.encodeBase64(keypair.secretKey)
+
+    if(typeof(master_json.keys) == "undefined"){
+      master_json.keys = {
+        archived : []
+      };
+    }
+
+    master_json.keys.public_key = receiverPublicKey;
+    
+    if(typeof(encrypt_dialog) == "undefined"){
+      encrypt_dialog = bootbox.prompt("In order to encrypt and decrypt your participants' data, we need a password. Make sure you will remember this password, if you forget it then any data that is encrypted will be lost forever.",function(result){
+        if(result){
+          bootbox.prompt("Let's type in the password one more time, just to be sure",function(result_2){
+            if(result == result_2){
+
+              var encryptedAES = CryptoJS.AES.encrypt(receiverSecretKey, result_2);
+              var encryptedAES_string = encryptedAES.toString();
+              var decrypted = CryptoJS.AES.decrypt(encryptedAES_string, result_2);
+              var plaintext = decrypted.toString(CryptoJS.enc.Utf8);
+
+              if(plaintext == receiverSecretKey){
+                console.dir("all good");
+                master_json.keys.encrypted_private_key = encryptedAES_string;
+                encrypt_obj.confirm_keys();
+                list_keys();
+              } else {
+                bootbox.alert("Something went wrong with creating your encryption keys");
+              }
+
+            } else {
+              bootbox.alert("Erm, your passwords didnt match, do you want to have another go?");
+              //update this with the relevant code to clarify whether the user wants to have another go.
+
+            }
+          });
+        }
+      });
+    }
+  },
+}
+
+function list_keys(){
+  if(typeof(master_json.keys) !== "undefined" &&
+     typeof(master_json.keys.public_key) !== "undefined" &&
+     master_json.keys.public_key !== ""){
+    $("#public_key").val(master_json.keys.public_key);
+    $("#private_key").val(master_json.keys.encrypted_private_key);
+  } else {
+    encrypt_obj.generate_keys();
+  }
+}
+
+</script>

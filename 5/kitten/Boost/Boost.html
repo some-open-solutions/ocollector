@@ -1,0 +1,421 @@
+<!--
+/*  Collector (Garcia, Kornell, Kerr, Blake & Haffey)
+    A program for running experiments on the web
+    Copyright 2012-2016 Mikey Garcia & Nate Kornell
+
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License version 3 as published by
+    the Free Software Foundation.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>
+
+		Kitten release (2019) author: Dr. Anthony Haffey (a.haffey@reading.ac.uk)
+*/
+-->
+<script src="iframe_library.js"></script>
+<style type="text/css" media="screen">
+#auto_boost_btn{
+  display:none;
+}
+#boost_editor {
+	width: 100%;
+	height: 500px;
+}
+#boost_preview{
+	width: 100%;
+	height: 500px;
+}
+#boost_table{
+	position:absolute;
+	
+	width:100%;
+  display:none;
+}
+#delete_boost_btn{
+  display:none;
+}
+#prev_boost_btn{
+  display:none;
+}
+#rename_boost_btn{
+	display:none;
+}
+#save_boost_btn{
+  display:none;
+}
+#boost_table { 
+	position:absolute;
+	top: 120px; 
+}
+</style>
+<nav class="navbar navbar-primary bg-white fixed-top fixed-top-2" id="boost_navbar">
+  <table>
+    <tr>
+      <td>
+        <button class="btn btn-primary" id="new_boost_btn">New</button>
+      </td>
+      <td>
+        <select class="form-control" id="boost_select">
+          <option hidden disabled selected>Select a boost</option>
+        </select>
+      </td>
+      <td>
+        <button class="btn btn-primary"         id="save_boost_btn">Save</button>
+        <button class="btn btn-primary"         id="rename_boost_btn">Rename</button>
+        <button class="btn btn-warning"         id="delete_boost_btn">Delete</button>
+        <button class="btn btn-primary"         id="prev_boost_btn">Preview</button>
+        <button class="btn btn-outline-primary" id="auto_boost_btn">Auto Load</button>
+      </td>
+    </tr>
+  </table>
+</nav>
+<table id="boost_table">
+  <tr>
+    <td style="width:50%">
+      <div id="boost_editor"></div>
+    </td>
+    <td style="width:50%">
+      <iframe id="boost_preview"></iframe>
+    </td>
+  </tr>
+</table>
+<div id="autloaded_boosts_div"></div>
+
+<script>
+var boost_editor;
+function boost_ace(){
+  if(typeof(ace) == "undefined"){
+    setTimeout(function(){
+      boost_ace();
+    },1000);
+  } else {
+    boost_editor = ace.edit("boost_editor");
+    boost_editor.setTheme("ace/theme/chrome");
+    boost_editor.session.setMode("ace/mode/html");
+    boost_editor.setOptions({
+      enableBasicAutocompletion: true,
+      enableLiveAutocompletion: true,
+      enableSnippets: false,
+      tabSize:2,
+      wrap:true
+    });
+  }
+}
+boost_ace();
+
+
+
+/////////////
+// Actions //
+/////////////
+
+
+$("#auto_boost_btn").on("click",function(){
+  if(typeof(master_json.autoloaded_boosts) == "undefined"){
+    master_json.autoloaded_boosts = {};
+  }
+  var boost = $("#boost_select").val();
+  if(typeof(master_json.autoloaded_boosts[boost]) !== "undefined"){
+    bootbox.confirm("This boost is currently activated - are you <b>sure</b> you want to deactivate it?",function(result){
+      if(result){
+        delete(master_json.autoloaded_boosts[boost]);  //remove item from list
+        $("#auto_boost_btn").removeClass("btn-primary");
+        $("#auto_boost_btn").addClass("btn-outline-primary");
+        update_master_json();
+      }
+    });
+  } else {
+    bootbox.confirm("This boost will start when you start up Collector - are you <b>sure</b> you want to activate it?",function(result){
+      if(result){
+       master_json.autoloaded_boosts[boost] = true;  //remove item from list
+        $("#auto_boost_btn").addClass("btn-primary");
+        $("#auto_boost_btn").removeClass("btn-outline-primary");
+        update_master_json();
+      }
+    });
+  }
+});
+
+$("#boost_editor").on("click",function(){
+  helperActivate("boost Code",boost_editor.getValue(),"boost");
+});
+
+$("#boost_editor").on("keyup input",function(){
+  var boost_content = boost_editor.getValue();
+  var boost_name    = $("#boost_select").val();
+  master_json.boosts[boost_name].contents = boost_content;
+});
+
+$('#boost_editor').keydown(function (e) {
+  if (e.ctrlKey && e.keyCode == 13) {
+    $("#prev_boost_btn").click();
+  }
+});
+
+$("#boost_select").on("change",function(){
+  var boost = $("#boost_select").val();
+  boost_editor.setValue(master_json.boosts[boost].contents);
+  valid_boost();
+  if(typeof(master_json.autoloaded_boosts) == "undefined"){
+    master_json.autoloaded_boosts = {};
+  }
+  if(typeof(master_json.autoloaded_boosts[boost]) !== "undefined"){
+    $("#auto_boost_btn").removeClass("btn-outline-primary");
+    $("#auto_boost_btn").addClass("btn-primary");
+  } else {
+    $("#auto_boost_btn").removeClass("btn-primary");
+    $("#auto_boost_btn").addClass("btn-outline-primary");
+  }
+  update_master_json();
+});
+
+$("#delete_boost_btn").on("click",function(){
+  var boost = $("#boost_select").val();
+	if(boost == $("#posted_script option:selected").text()){
+		bootbox.alert("You have selected <b>" + boost + "</b> to run on your data. Please go to your <b>data</b> tab and change the selected boost to run on your data before deleting this boost.");
+	} else {
+		bootbox.confirm("Are you sure you want to delete <b>" + boost + "</b>?",function(result){
+			if(result){
+				delete(master_json.boosts[boost]);
+				//delete dbx file
+				dbx.filesDelete({path:"/boosts/"+boost+".html"})
+					.then(function(response) {
+						custom_alert(boost +" succesfully deleted");
+						$('#boost_select option[value=' + boost + ']').remove();
+
+						$("#boost_select").val("Select a boost");
+						$("#boost_editor").hide();
+						no_valid_boost();
+						update_master_json();
+					})
+					.catch(function(error){
+						report_error("error deleting boost", "error deleting boost");
+					});
+			}
+		});
+	}
+});
+
+$("#new_boost_btn").on("click",function(){
+  bootbox.prompt("What would you like to call your new boost?",function(response){  if(typeof(master_json.boosts[response]) !== "undefined"){
+      bootbox.alert("A boost with this name already exists - please come up with a unique name for this boost");
+    } else if(Object.keys(help_obj.surv.type).indexOf(response) !== -1) {
+      bootbox.alert("That name is already taken by an item <b>type</b> in surveys. Please choose another name");
+		} else {
+
+			master_json.boosts[response] = {
+				contents : "",
+				location : ""
+			};
+      $('#boost_select').append($('<option>', {
+        value: 	response,
+        text: 	response
+      }));
+      $("#boost_select").val(response);
+
+			$("#posted_script").append($('<option>', {
+				value: 	response,
+				text: 	response
+			}));
+      boost_editor.setValue("");
+      valid_boost();
+
+			var boost_path = "/boosts/"+response.replace(".html","") + ".html";
+			dbx_obj.new_upload({
+				path    : boost_path,
+				contents: "",
+				mode    : "overwrite"
+			},function(result){
+				dbx.sharingCreateSharedLink({path:boost_path})
+					.then(function(result){
+						master_json.boosts[response].location = result.url;
+						update_master_json();
+					})
+					.catch(function(error){
+						report_error("error creating link for boost",
+                         "error creating link for boost:");
+					});
+
+			},function(error){
+				custom_alert("Error saving boost - please check your console.");
+				console.dir(error);
+			},
+			"filesUpload");
+    }
+  });
+});
+
+$("#prev_boost_btn").on("click",function(){
+  if(boost_editor.getSelectedText() == ""){
+    var iframe_content = boost_editor.getValue();
+  } else {
+    var iframe_content = boost_editor.getSelectedText();
+  }
+	doc = document.getElementById('boost_preview').contentWindow.document;
+	doc.open();
+	doc.write(libraries + iframe_content);
+	doc.close();
+});
+
+$("#rename_boost_btn").on("click",function(){
+	var old_name = $("#boost_select").val();
+	bootbox.prompt("What would you like to rename this boost to?",function(new_name){
+		if(typeof(master_json.boosts[new_name]) !== "undefined"){
+			bootbox.alert("<b>" + new_name + "</b> already exists. Please choose a unique name");
+		} else {
+			if(new_name){ //i.e. not null
+				master_json.boosts[new_name] = master_json.boosts[old_name];
+				delete(master_json.boosts[old_name]);
+				var old_path = "/boosts/"+old_name.replace(".html","") + ".html";
+				var new_path = "/boosts/"+new_name.replace(".html","") + ".html";
+				dbx.filesMove({from_path : old_path, to_path : new_path})
+					.then(function(result){
+						$('#boost_select option[value=' + old_name + ']').val(new_name);
+						$('#boost_select option[value=' + new_name + ']').text(new_name);
+						$('#posted_script option:contains("'+old_name+'")').text(new_name);update_master_json();
+					})
+					.catch(function(error){
+						report_error("error moving boost", "error moving boost:");
+					});
+			}
+		}
+	});
+});
+
+$("#save_boost_btn").on("click",function(){
+  var boost = $("#boost_select").val();
+  if(boost !== null){
+		var boost_content = boost_editor.getValue();
+    dbx_obj.new_upload({path:"/boosts/"+boost+".html",contents:boost_content,mode:"overwrite"},
+    function(){
+
+			if(master_json.boosts[boost].location == ""){
+				dbx.sharingCreateSharedLink({path:"/boosts/" + response.replace(".html","") + ".html"})
+					.then(function(result){
+						master_json.boosts[response].location = result.url;
+					})
+					.catch(function(error){
+						report_error("error saving boost", "error saving boost");
+					});
+			}
+
+			//update exp_json if relevant survey has it
+			if(exp_json !== "" && typeof(exp_json.surveys) !== "undefined"){
+				var relevant_surveys = Object.keys(exp_json.surveys);
+				relevant_surveys.forEach(function(survey){
+					relevant_survey = collectorPapaParsed(exp_json.surveys[survey]);
+					if(relevant_survey.filter(row => row.type == boost).length > 0){
+						if(typeof(exp_json.boosts) == "undefined"){
+							exp_json.boosts = {
+								contents:'',
+								location:''
+							};
+						}
+						exp_json.boosts[boost] = boost_content;
+					}
+				});
+			}
+			update_master_json();
+    },function(error){
+      custom_alert("Error saving boost - please check your console.");
+      console.dir(error);
+    },
+		"filesUpload");
+  }
+});
+
+///////////////
+// functions //
+///////////////
+
+function autoload_boosts(){
+  if(typeof(master_json.autoloaded_boosts) == "undefined"){
+    master_json.autoloaded_boosts = {};
+  }
+  if(Object.keys(master_json.autoloaded_boosts).length !== 0){
+    bootbox.confirm("Are you sure you want to load the following boosts: <br>" + Object.keys(master_json.autoloaded_boosts).join("<br>"),function(response){
+      if(response){
+        Object.keys(master_json.autoloaded_boosts).forEach(function(boost){
+          $("#autloaded_boosts_div").append(master_json.boosts[boost]);
+        });
+      }
+    });
+  };
+}
+
+function list_boosts(){
+	if(typeof(master_json.boosts) == "undefined"){
+		master_json.boosts = {};
+	}
+  var boosts = Object.keys(master_json.boosts).filter(boost => boost !== "_help");
+  boosts.sort(function(a,b){
+		return a.toLowerCase().localeCompare(b.toLowerCase());
+	});
+  boosts.forEach(function(boost){
+    $('#boost_select').append($('<option>', {
+      value: 	boost,
+      text: 	boost
+    }));
+  });
+	if(typeof(master_json.data) == "undefined"){
+		master_json.data = {
+			scripts:{}
+		};
+	}
+
+	// fill in selects
+	//////////////////
+	var boosts_list = Object.keys(master_json.boosts).filter(boost => boost !== "_help");
+	boosts_list.forEach(function(this_boost){
+		//tidy boosts if not already updated
+		if(typeof(master_json.boosts[this_boost].location) == "undefined"){
+			master_json.boosts[this_boost] = {
+				contents : master_json.boosts[this_boost],
+				location : ''
+			}
+			var boost_path = "/boosts/"+this_boost.replace(".html","")+".html";
+			dbx.sharingCreateSharedLink({path:boost_path})
+				.then(function(result){
+					master_json.boosts[this_boost].location = result.url.replace("www.","dl.");
+					$("#posted_script").append($('<option>', {
+						text : this_boost,
+						value : master_json.boosts[this_boost].location.replace("www.","dl.")
+					}));
+				})
+				.catch(function(error){
+					report_error("error created shared link for boost","error creating shared link for boost");
+				});
+		} else {
+			$("#posted_script").append($('<option>', {
+				text : this_boost,
+				value : master_json.boosts[this_boost].location.replace("www.","dl.")
+			}));
+		}
+	});
+}
+
+function no_valid_boost(){
+  $("#delete_boost_btn").hide();
+  $("#prev_boost_btn").hide();
+	$("#rename_boost_btn").hide();
+  $("#save_boost_btn").hide();
+  $("#boost_table").hide();
+  $("#auto_boost_btn").hide();
+}
+
+function valid_boost(){
+  $("#delete_boost_btn").show();
+  $("#prev_boost_btn").show();
+	$("#rename_boost_btn").show();
+  $("#save_boost_btn").show();
+  $("#boost_table").show();
+  $("#auto_boost_btn").show();
+}
+</script>

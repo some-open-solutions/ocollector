@@ -1,0 +1,131 @@
+<!--
+    Collector (Garcia, Kornell, Kerr, Blake & Haffey)
+    A program for running experiments on the web
+    Copyright 2012-2016 Mikey Garcia & Nate Kornell
+
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License version 3 as published by
+    the Free Software Foundation.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>
+
+		Kitten release (2019) author: Dr. Anthony Haffey (a.haffey@reading.ac.uk)
+*/
+-->
+
+<script>
+
+// Load template default experiment
+///////////////////////////////////
+var new_experiment_data;
+$.get(collector_map["default_experiment.json"],function(new_experiment_json){
+ new_experiment_data = new_experiment_json;
+});
+
+</script>
+
+<div class="modal" tabindex="-1" role="dialog" id="upload_experiment_modal">
+
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Upload a new experiment</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close" id="close_upload_experiment_modal">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="custom-file">
+          <input type="file" class="custom-file-input" id="upload_experiment_input" aria-describedby="upload_experiment_input_addon">
+          <label class="custom-file-label" for="upload_experiment_input">Upload experiment</label>
+        </div>
+        <p>
+          <table>
+            <tr>
+              <td>
+                <div class="input-group mb-3">
+                  <div class="input-group-prepend">
+                    <span class="input-group-text" style="width:100%">Default</span>
+                  </div>
+                  <select class="form-control" id="default_experiments_select">
+                    <option disabled selected>Select an experiment</option>
+                    <option>anagram</option>
+                    <option>anagram_time_pressure</option>
+                    <option>stroop</option>
+                    <option>temporal_discounting</option>
+                  </select>
+                  <div class="input-group-append">
+                    <button class="input-group-text btn btn-secondary" id="upload_default_exp_btn" style="width:100%" disabled>Use</button>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          </table>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+$("#close_upload_experiment_modal").on("click",function(){
+  $("#upload_experiment_modal").hide();
+});
+</script>
+
+<div id="load_toolbar">
+	<table>
+		<tr>
+			<td>
+				<button type="button" id="new_experiment_button" class="btn btn-primary">New</button>
+				<button type="file" id="upload_experiment_button" class="btn btn-primary">↑</button>
+			</td>
+			<td>
+				<span id="experiments"></span>
+			</td>
+			<td>
+				<span id="dropbox_inputs" style="display:none">
+					<button type="button" id="download_experiment_button" class="btn btn-primary">↓</button>
+					<button id="save_btn" class="btn btn-primary">Save</button>
+					<button id="rename_exp_btn" class="btn btn-primary">Rename</button>
+					<button id="delete_exp_btn" class="btn btn-primary">Delete</button>
+					<button id="versions_btn" class="btn btn-primary">Versions</button>
+					<button id="run_btn"      class="btn btn-primary">Run</button>
+				</span>
+			</td>
+		</tr>
+	</table>
+</div>
+
+<script>
+
+
+// CTRL key shortcuts
+/////////////////////
+
+var keys = {};
+$(document).keydown(function (e) {
+    keys[e.which] = true;
+});
+
+$(window).bind('keydown', function(event) {
+  if (event.ctrlKey || event.metaKey) {
+    switch (String.fromCharCode(event.which).toLowerCase()) {
+      case 's':
+        event.preventDefault();
+          $("#save_btn").click();
+        break;
+    }
+  }
+});
+$(window).bind('keyup', function(event) {
+  delete keys[event.which];
+});
+</script>

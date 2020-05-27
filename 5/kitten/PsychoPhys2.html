@@ -1,0 +1,269 @@
+<!--
+/*  Collector (Garcia, Kornell, Kerr, Blake & Haffey)
+    A program for running experiments on the web
+    Copyright 2012-2016 Mikey Garcia & Nate Kornell
+
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License version 3 as published by
+    the Free Software Foundation.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>
+ 
+		Kitten release (2019) author: Dr. Anthony Haffey (a.haffey@reading.ac.uk)
+*/
+-->
+
+<link rel="stylesheet" href="../libraries/bootstrap.3.3.7.min.css">
+<script src="../libraries/jquery-3.3.1.min.js"></script>
+<script src="../libraries/popper.min.js"></script>
+<script src="../libraries/bootstrap.4.0.min.js"></script>
+<script src="../libraries/papaparse.4.3.6.min.js"></script>
+
+<style>
+.timestamp_value{
+	background: transparent;
+	border: none !important;
+	font-size:0;
+}
+#current_channel_1_val{
+	width:10px;
+}
+#channel_1_max{
+	height:90px;
+	width: 20px;
+}
+#channel_1_min{
+	width: 20px;
+}
+.channel_canvas{
+  border: solid 1px black;
+}
+</style>
+<script>
+	window.jQuery || document.write('<script src="../libraries/jquery-3.3.1.min.js"><\/script>');
+</script>
+
+<table style="width:100%">	
+	<tr>
+		<td style="width:70px">
+			Channel 0 <span id = "current_channel_0_val"></span>
+		</td>
+		<td>
+			<div id="channel_0_max">1000</div>
+			<div id="channel_0_min">0</div>	
+		</td>
+		<td>
+			<canvas id="channel_0_canvas" class="channel_canvas" width=1000 height=100></canvas>
+		</td>		
+	</tr>
+  <tr>
+		<td style="width:70px">
+			Channel 1 <span id = "current_channel_1_val"></span>
+		</td>
+		<td>
+			<div id="channel_1_max">1000</div>
+			<div id="channel_1_min">0</div>	
+		</td>
+		<td>
+			<canvas id="channel_1_canvas" class="channel_canvas" width=1000 height=100></canvas>
+		</td>		
+	</tr>
+  <tr>
+		<td style="width:70px">
+			Channel 2 <span id = "current_channel_2_val"></span>
+		</td>
+		<td>
+			<div id="channel_2_max">1000</div>
+			<div id="channel_2_min">0</div>	
+		</td>
+		<td>
+			<canvas id="channel_2_canvas" class="channel_canvas" width=1000 height=100></canvas>
+		</td>		
+	</tr>
+  <tr>
+		<td style="width:70px">
+			Channel 3 <span id = "current_channel_3_val"></span>
+		</td>
+		<td>
+			<div id="channel_3_max">1000</div>
+			<div id="channel_3_min">0</div>	
+		</td>
+		<td>
+			<canvas id="channel_3_canvas" class="channel_canvas" width=1000 height=100></canvas>
+		</td>		
+	</tr>
+  <tr>
+		<td style="width:70px">
+			Channel 4 <span id = "current_channel_4_val"></span>
+		</td>
+		<td>
+			<div id="channel_4_max">1000</div>
+			<div id="channel_4_min">0</div>	
+		</td>
+		<td>
+			<canvas id="channel_4_canvas" class="channel_canvas" width=1000 height=100></canvas>
+		</td>		
+	</tr>
+</table>
+<table>
+	<tr>
+		<td>
+			<input type="text" class="form-control" id="new_comments">
+		</td>
+		<td>
+			<button class="btn btn-primary comment" id="comment">Default Comment</button>
+			<span id="new_comments_span"></span>
+			<span id="current_comment"></span>
+		</td>
+	</tr>
+	<tr>
+		<td>
+			<button id="save_btn" class="btn btn-primary">Save</button>
+		</td>
+	</tr>
+</table>
+<div id="hi_div"></div>
+	
+
+<script>
+$("#new_comments").on("keyup",function(){
+	parse_new_comments();	
+});
+function parse_new_comments(){
+	if($("#new_comments").val().indexOf(";") !== -1){
+		var new_comments = $("#new_comments").val().split(";");
+		new_comments.forEach(function(new_comment_value){
+			if(new_comment_value !== ""){			
+				$("#new_comments_span").append('<button class="btn btn-primary comment">' + new_comment_value + '</button>');
+			}
+		});
+		$("#new_comments").val("");
+		
+		$(".comment").off();
+		$(".comment").on("click",function(){
+			write_comment($(this).html());
+		});
+	}
+}
+
+function write_comment(comment_text){
+	var canvas = document.getElementById("channel_1_canvas");
+	var ctx = canvas.getContext("2d");
+	ctx.moveTo(all_data.heart_vis_vals.length, 0);
+	ctx.lineTo(all_data.heart_vis_vals.length, 100);
+	ctx.font = "10px Arial";
+	ctx.fillStyle = "red";
+	ctx.fillText(comment_text, all_data.heart_vis_vals.length, 90);
+	
+	ctx.stroke();
+	$("#current_comment").html(comment_text);
+}
+
+$(".comment").on("click",function(){
+	write_comment($(this).html());
+});
+
+
+
+$("#save_btn").on("click",function(){
+	$("#save_btn").html("Saving");
+  
+  var all_blob = new Blob([JSON.stringify(all_data)], {type: 'text/.json'});
+	if(window.navigator.msSaveOrOpenBlob) {
+		window.navigator.msSaveBlob(all_blob, "all_data.json");
+	}	else{
+		var elem = window.document.createElement('a');
+		elem.href = window.URL.createObjectURL(all_blob);
+		elem.download = "all_data.json";        
+		document.body.appendChild(elem);
+		elem.click();        
+		document.body.removeChild(elem);
+	}
+  
+  heart_comment_data = [];
+  all_data.heart_vals.forEach(function(heart_val,index){
+    var this_obj = {
+      heart:heart_val,
+      comment:all_data.comment_vals[index]
+    }
+    heart_comment_data.push(this_obj);
+  });    
+  
+  var csv_blob = new Blob([Papa.unparse(heart_comment_data)], {type: 'text/.csv'});
+	if(window.navigator.msSaveOrOpenBlob) {
+		window.navigator.msSaveBlob(csv_blob, "heart_comment.csv");
+	}	else{
+		var elem = window.document.createElement('a');
+		elem.href = window.URL.createObjectURL(csv_blob);
+		elem.download = "heart_comment.csv";
+		document.body.appendChild(elem);
+		elem.click();        
+		document.body.removeChild(elem);
+	}
+  
+  
+  //save arrays of heart val and comments as .csv
+  
+  
+});
+
+var counter = 0;
+y_array = [];
+
+channels = 0;
+all_data = {
+  clean_channels:function(raw_data){
+    raw_data = raw_data.replace("b","");
+    raw_data = raw_data.replace("\r\n","");
+    raw_data = raw_data.replace("\\r\\n","");
+    raw_data = raw_data.split("---");
+    channels = raw_data.length;
+    heart_value = raw_data[0];
+    emg_value   = raw_data[1];
+    for(var h = 0; h < channels; h++){
+      var this_value = raw_data[h];
+      i = all_data.heart_vis_vals[h].length-1;
+		
+      $("#current_channel_" + h + "_val").html(this_value);
+      all_data.heart_vals[h].push(this_value);
+      all_data.heart_vis_vals[h].push(this_value);
+      all_data.comment_vals.push($("#current_comment").html());
+      
+      var canvas = document.getElementById("channel_" + h + "_canvas");
+      var ctx = canvas.getContext("2d");
+      
+      
+      old_height  = 100 * (1000 - all_data.heart_vis_vals[h][i-1] - all_data.channel_min) / (all_data.channel_max - all_data.channel_min);
+      this_height = 100 * (1000 - all_data.heart_vis_vals[h][i]   - all_data.channel_min) / (all_data.channel_max - all_data.channel_min);
+      
+      if(all_data.heart_vis_vals[h].length > 1001){
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.beginPath();
+        all_data.heart_vis_vals[h] = [];
+      }
+      ctx.strokeStyle = '#ff0000';
+      console.dir(i);
+      ctx.moveTo(i-1,	old_height);
+      ctx.lineTo(i	, this_height);
+      ctx.stroke();
+      $("#hi_div").html(old_height);
+      
+    }
+  },
+  clean_emg_val:function(this_value){
+    $("#current_emg_val").html(this_value);
+  },	
+  comment_vals:[],
+	heart_vals:[[],[],[],[],[]],
+	heart_vis_vals:[[],[],[],[],[]],
+	channel_min:0,
+	channel_max:1000,
+}
+</script>
