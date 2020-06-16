@@ -1,0 +1,268 @@
+<!--
+    Collector (Garcia, Kornell, Kerr, Blake & Haffey)
+    A program for running experiments on the web
+    Copyright 2012-2016 Mikey Garcia & Nate Kornell
+
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License version 3 as published by
+    the Free Software Foundation.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>
+
+		Kitten release (2019) author: Dr. Anthony Haffey (a.haffey@reading.ac.uk)
+-->
+<style>
+.logo{
+	height:30px;
+	width:30px;
+}
+#collector_logo,
+#github_logo{
+  display:none;
+}
+</style>
+<table id="logout_table">
+	<tr>
+		<td>
+			<a href="" id="authlink" class="button" style="display:none">Authenticate Dropbox</a>
+			<span id="dropbox_account_email" class="account_info text-white">No dropbox account linked yet</span>
+		</td>
+
+		<td>
+			<img class='logo' style="border-radius: 50%; background-color:white; padding:2px" src="../logos/dbx.ico.png" id="dropbox_logo">
+		</td>
+    <td>
+      <span id="save_status" class="text-white"></span>
+    </td>
+    <td>
+      <span id="collector_account_email" class="account_info text-white"></span>
+    </td>
+		<td>
+			<img class='logo' style="border-radius: 50%; background-color:white; padding:2px" src="../logos/collector.ico.png" id="collector_logo">
+		</td>
+    <td>
+			<img class='logo' style="border-radius: 50%; background-color:white; padding:2px" src="../logos/Github.png" id="github_logo">
+		</td>
+	</tr>
+</table>
+
+<script>
+
+switch(dev_obj.context){
+  
+  case "localhost":
+    //show the github icon
+    $("#github_logo").show();
+		$("#collector_logo").show();
+    break;
+	case "github":
+  case "server":
+		if(window.localStorage.getItem("user_email") !== null){
+			$("#collector_account_email").html(window.localStorage.getItem("user_email"));			
+		} 
+    $("#collector_logo").show();
+    break;
+  default:    
+    $("#collector_logo").show(); //this might be redundant
+    break;
+};
+
+
+function highlight_account(element_id){
+  $("#"+element_id).animate(
+    {
+      fontSize:"20px"
+    },
+    {
+      duration:1000,
+      complete:function(){
+        $("#"+element_id).animate(
+          {
+            fontSize:"0px"
+          },
+          {
+            duration:1000
+          }
+        );
+      }
+    }
+  );
+}
+
+$(".logo").hover(function(){
+  var account_id = this.id.replace("logo","account_email");
+  $("#"+account_id).show(500);
+	$("#"+account_id).animate({
+    fontSize:"14px"
+  },500);
+},function(){
+  var account_id = this.id.replace("logo","account_email");
+  $("#"+account_id).animate({
+    fontSize:"0px"
+  },500);
+});
+
+$("#collector_logo").on("click", function(){
+	update_server_table();
+	$("#login_modal").fadeIn();
+});
+
+$("#github_logo").on("click",function(){
+	if(typeof(master_json.github) == "undefined"){
+		master_json.github = {
+
+		}
+	}
+  var dialog = bootbox.dialog({
+    title: 'Synch with github repository',
+    message: '<div class="jumbotron">' +
+                '<h1 class="display-4">Collector</h1>' +
+                '<p class="lead">Put in the information below to allow you to update your online experiments</p>' +
+                '<div class="input-group mb-3">' +
+                  '<div class="input-group-prepend">' +
+                    '<span class="input-group-text bg-primary text-white">Github username</span>' +
+                  '</div>' +
+                  '<input class="form-control" id="github_username"/>' +
+                '</div>' +
+                '<div class="input-group mb-3">'+
+                  '<div class="input-group-prepend">'+
+                   ' <span class="input-group-text bg-primary text-white"> Organisation (optional)</span>' +
+                  '</div>' +
+                  '<input class="form-control" id="github_organisation"/>' +
+                '</div>' +
+                '<div class="input-group mb-3">' +
+                  '<div class="input-group-prepend">' +
+                    '<span class="input-group-text bg-primary text-white">Repository\'s name</span>' +
+                  '</div>' +
+                  '<input class="form-control" id="github_repository"/>' +
+                '</div>' +
+              '</div>' +
+              '<script>' +
+                'if(typeof(master_json.github.organisation) == "undefined"){' +
+                  'master_json.github.organisation = ""' +
+                '}' +
+                '$("#github_username").val(master_json.github.username);' +
+                '$("#github_organisation").val(master_json.github.organisation);' +
+                '$("#github_repository").val(master_json.github.repository);' +
+
+                '$("#github_repository").on("keyup",function(){' +
+                  'master_json.github.repository = $("#github_repository").val();' +
+                '});' +
+                '$("#github_username").on("keyup",function(){' +
+                  'master_json.github.username = $("#github_username").val();' +
+                '});' +
+                '$("#github_organisation").on("keyup",function(){' +
+                  'master_json.github.organisation = $("#github_organisation").val();' +
+                '});' +
+              '</' + 'script>',
+    buttons: {
+			Pull: {
+				label: "Pull",
+				className: 'btn-primary',
+				callback: function(){
+					var organisation = $("#github_organisation").val();
+					var repository   = $("#github_repository").val();
+					var username     = $("#github_username").val();
+
+					eel.pull_collector(username,
+														 organisation,
+														 repository);
+							
+				}
+			},
+			Push: {
+        label: "Push",
+        className: 'btn-primary',
+        callback: function(){
+          var organisation = $("#github_organisation").val();
+          var repository   = $("#github_repository").val();
+          var username     = $("#github_username").val();
+
+          bootbox.prompt({
+            title: "What is your password? (this will never be saved, but is needed to upload your changes to github)",
+            inputType: "password",
+            callback: function(password){
+              if(password){
+                bootbox.prompt("How would you describe this update?",function(update_message){
+                  if(update_message){
+                    eel.push_collector(username,
+                                       password,
+                                       organisation,
+                                       repository,
+                                       update_message);
+                  } else {
+                    eel.push_collector(username,
+                                       password,
+                                       organisation,
+                                       repository,
+                                       "No message");
+                  }
+                });
+              }
+            }
+          });
+        }
+      },
+      view: {
+        label: "Github",
+        className: 'btn-primary',
+        callback: function(){
+          var username     = $("#github_username").val();
+          var organisation = $("#github_organisation").val();
+          var repository   = $("#github_repository").val();
+
+          if(organisation == ""){
+            organisation = username;
+          }
+          window.open('https://www.github.com/' +
+                      organisation +
+                      '/' +
+                      repository,'_blank');
+        }
+      },      
+      cancel: {
+        label: "Cancel",
+        className: 'btn-secondary',
+        callback: function(){
+          //nothing, just close
+        }
+      }
+    }
+  });
+});
+
+$("#dropbox_logo").on("click", function(){
+	var dialog = bootbox.dialog({
+	title: 'Dropbox account',
+	message: "<p>Do you want to choose (another) dropbox account or view your dropbox files? <br><br> <b>NOTE</b>: Before logging out, make sure you have saved everything you want to.</p>",
+	buttons: {
+		cancel: {
+			label: "View",
+			className: 'btn-primary',
+			callback: function(){
+				window.open('https://www.dropbox.com/home/Apps/Collector-SOS','_blank');
+			}
+		},
+		noclose: {
+			label: "Select Account",
+			className: 'btn-info',
+			callback: function(){
+				force_reauth_dbx();
+			}
+		},
+		ok: {
+			label: "Cancel",
+			className: 'btn-secondary',
+		}
+	}
+	});
+});
+</script>
+<script src="DropboxInitiate.js"></script>

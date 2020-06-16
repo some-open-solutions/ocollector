@@ -1,0 +1,521 @@
+<!--
+    Collector (Garcia, Kornell, Kerr, Blake & Haffey)
+    A program for running experiments on the web
+    Copyright 2012-2016 Mikey Garcia & Nate Kornell
+
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License version 3 as published by
+    the Free Software Foundation.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>
+
+		Kitten release (2019) author: Dr. Anthony Haffey (a.haffey@reading.ac.uk)
+-->
+<script>
+////////////////////////////////////////
+// To allow development within gitpod //
+////////////////////////////////////////
+if(typeof(dev_obj) == "undefined"){
+  dev_obj = {
+    dev_location:"Surveys.html"
+  }
+  
+  document.write('<script src="../../CollectorMap.js"><\/script>');
+  
+  function get_map(){
+    if(typeof(isolation_map) !== "undefined"){
+      collector_map = this_map(dev_obj.dev_location);
+    } else {
+      setTimeout(function(){
+        get_map();
+        load_default_surveys();
+      },1000);
+    }
+  }
+  get_map();
+}
+</script>
+<script>
+
+function load_default_surveys(){
+  var default_survey_files = ["autism_quotient.csv",
+                              "demographics.csv",
+                              "empathy_quotient_40.csv"];
+
+  function load_survey(list){
+    if(list.length > 0){
+      var this_survey = list.pop();
+      $.get(collector_map[this_survey],function(survey_content){
+        master_json.surveys.default_surveys[this_survey.toLowerCase()] = Papa.parse(survey_content).data;
+        load_survey(list);
+      });
+    } else {
+      //based on solution by "dule" at https://stackoverflow.com/questions/740195/adding-options-to-a-select-using-jquery
+      default_surveys_list = Object.keys(master_json.surveys.default_surveys).sort();
+      $.each(default_surveys_list, function (i, item) {
+        $('#survey_select').append($('<option>', {
+          value: "default|" + item , //.value,
+          text : item, //.text
+        }));
+      });
+    }
+  }
+  load_survey(default_survey_files);
+}
+</script>
+
+<style>
+#spreadsheet_preview_tabs{
+	display:none;
+}
+#survey_interface{
+	padding: 5px;
+}
+</style>
+
+<nav class="navbar navbar-primary bg-white fixed-top fixed-top-2">
+  <table style = "max-width:80%">
+    <tr>
+      <td>
+        <button class='btn btn-primary' type='button' id="new_survey_button" title="Will create a new survey based on the one you have selected. Please select one of the existing surveys if you haven't already to be able to create a new survey based on it.">New Survey</button>
+      </td>
+      <td>
+        <select id='survey_select' class="form-control">
+          <option disabled selected>Please select a survey</option>
+        </select>
+      </td>
+      <td>
+        <button id='save_survey_btn' class='btn btn-primary'>Save</button>
+        <button id='rename_survey_btn' class='btn btn-primary'>Rename</button>
+        <button id='delete_survey_btn' class='btn btn-primary'>Delete</button>
+      </td>
+      <td id="spreadsheet_preview_tabs">
+        <ul  class="nav nav-pills mb-3 bg-secondary" id="pills-tab" role="tablist">
+          <li class="nav-item">
+            <a class="nav-link active text-white" id="pills-spreadsheet-tab" data-toggle="pill" href="#pills-spreadsheet" role="tab" aria-controls="pills-spreadsheet" aria-selected="true">Spreadsheet</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link text-white" id="pills-preview-tab" data-toggle="pill" href="#pills-preview" role="tab" aria-controls="pills-preview" aria-selected="false">Preview</a>
+          </li>
+        </ul>
+      </td>
+    </tr>
+  </table>
+</nav>
+<div class="tab-content" id="pills-tabContent" style="top:100px; position: absolute;">
+  <div class="tab-pane fade show active" id="pills-spreadsheet" role="tabpanel" aria-labelledby="pills-spreadsheet-tab">
+    <div id="survey_HoT"></div>
+  </div>
+  <div class="tab-pane fade" id="pills-preview" role="tabpanel" aria-labelledby="pills-preview-tab">
+    <div id="survey_preview"></div>
+  </div>
+</div>
+
+
+
+<script>
+///////////////
+// functions //
+///////////////
+var survey_HoT;
+
+function create_survey_HoT(this_survey){
+	var container = document.getElementById('survey_HoT');
+	$("#survey_HoT").html("");
+  survey_HoT = new Handsontable(container, {
+		data: this_survey,
+		minSpareCols: 1,
+		minSpareRows: 1,
+		rowHeaders: false,
+		colHeaders: false,
+		contextMenu: {
+			items: {
+				"about": { // Own custom option
+					name: function () { // `name` can be a string or a function
+						return '<b>Edit cell</b>'; // Name can contain HTML
+					},
+					hidden: function () { // `hidden` can be a boolean or a function
+						// Hide the option when the first column was clicked
+						return this.getSelectedLast()[0] == 0; // `this` === hot3
+					},
+					callback: function(key, selection, clickEvent) { // Callback for specific option
+						this_sheet = this;
+						$('#cell_editor_div').fadeIn();
+						this_selection = selection;
+
+						cell_editor.setValue(this_sheet.getDataAtCell(selection.start.row, 
+																													selection.start.col),-1);
+														
+						
+						
+						//var cell_editor_width = parseFloat($("#cell_editor_div").css("width").replace("px",""));
+
+						if($("#help_content").is(":visible")){
+							var helper_width = parseFloat($("#help_content").css("width").replace("px",""));
+							
+							$("#cell_editor_div").animate({
+								"width": window.innerWidth - helper_width
+							}, 500,function(){
+								cell_editor.resize();
+							});
+						} else {
+							$("#cell_editor_div").animate({
+								"width": window.innerWidth
+							}, 500,function(){
+								cell_editor.resize();
+							});
+						}
+					}
+				},
+				"---------": {
+					name: '---------'
+				},
+				"row_below": {
+					name: 'Insert row below'
+				},			
+				"row_above": {
+					name: 'Insert row above'
+				},
+				"col_left": {
+					name: 'Insert column left'
+				},
+				"col_right": {
+					name: 'Insert column right'
+				},
+				"remove_row": {
+					name: 'Remove row'
+				},
+				"remove_col": {
+					name: 'Remove column'
+				},
+				"undo": {
+					name: 'Undo'
+				},
+				"redo": {
+					name: 'Redo'
+				},			
+				"make_read_only": {
+					name: 'Read only'
+				},
+				"alignment": {
+					name: 'Alignment'
+				},
+			}
+		},
+		colWidths:100,
+		rowHeights: 1,
+		wordWrap: false,
+		observeChanges: true,
+		afterSelectionEnd: function(){
+			thisCellValue = this.getValue();
+
+			//clearTimeout(disable_cell_timeout);
+			var coords        = this.getSelected();
+			var column        = this.getDataAtCell(0,coords[1]);
+			var thisCellValue = this.getDataAtCell(coords[0],coords[1]);
+			thisCellValue = thisCellValue == null ? thisCellValue = "" : thisCellValue;
+			column        = column        == null ? column        = "" : column;
+
+			helperActivate(column, thisCellValue,"survey");
+		},
+		afterChange: function(){
+      var middleColEmpty=0;
+			var middleRowEmpty=0;
+			var postEmptyCol=0; //identify if there is a used col after empty one
+			var postEmptyRow=0; // same for rows
+
+			for (var k=0; k<this.countCols()-1; k++){
+					//checking for invalid item number (1)
+
+					//Removing Empty middle columns
+					if (this.isEmptyCol(k)){
+							if (middleColEmpty==0){
+									middleColEmpty=1;
+							}
+					}
+					if (!this.isEmptyCol(k) & middleColEmpty==1){
+							postEmptyCol =1;
+							this.alter("remove_col",k-1); //delete column that is empty
+							middleColEmpty=0;
+					}
+			}
+
+			//Same thing for rows
+			for (var k=0; k<this.countRows()-1; k++){
+				if (this.isEmptyRow(k)){
+					if (middleRowEmpty==0){
+						middleRowEmpty=1;
+					}
+				}
+				if (!this.isEmptyRow(k) & middleRowEmpty==1){
+					postEmptyRow =1;
+					this.alter("remove_row",k-1); //delete column that is empty
+					middleRowEmpty=0;
+				}
+			}
+			if(postEmptyCol != 1 ){
+				while(this.countEmptyCols()>1){
+					this.alter("remove_col",this.countCols); //delete the last col
+				}
+			}
+			if(postEmptyRow != 1){
+				while(this.countEmptyRows()>1){
+					this.alter("remove_row",this.countRows);//delete the last row
+				}
+			}
+
+			var this_survey_name = $("#survey_select").val();
+			var this_survey = this.getData().filter(function(row){ return row.join("") !== '' });
+		}
+	});
+	var this_survey_name = $("#survey_select").val();
+  preview_survey(this_survey);
+}
+
+function list_surveys(){
+  $("#survey_select").empty();
+  $("#survey_select").append("<option disabled>Select a survey</option>");
+  $("#survey_select").val("Select a survey");
+    
+  if(typeof(master_json.surveys) == "undefined" ||
+    typeof(master_json.surveys.user_surveys) == "undefined"){
+    master_json.surveys = {
+      preview         : false,
+      user_surveys    : {}
+    }
+  }
+	master_json.surveys = typeof(master_json.surveys) == "undefined" ? {} : master_json.surveys;
+	master_json.surveys.default_surveys = {};
+
+	master_json.surveys.user_surveys = typeof(master_json.surveys.user_surveys) == "undefined" ? {} : master_json.surveys.user_surveys;
+	master_json.surveys.default_surveys = clean_obj_keys(master_json.surveys.default_surveys);
+
+	var def_survey_list  = Object.keys(master_json.surveys.default_surveys).sort();
+	var user_survey_list = Object.keys(master_json.surveys.user_surveys).sort();
+
+  load_default_surveys();
+  user_survey_list.forEach(function(user_survey){
+    $("#survey_select").append($("<option>",{
+			text:user_survey,
+			value:"user|" + user_survey,
+			class:"bg-white text-dark"
+		}));
+	});
+  if(typeof(dev_obj.dev_location) == "undefined" &
+     dev_obj.context !== "localhost"){
+      synch_surveys();
+  }
+}
+
+function preview_survey(this_survey){
+  master_json.surveys.preview = true;
+  survey_template = $.get(collector_map["survey.html"], function(survey_template){
+    survey_template = survey_template.replace('"{{survey}}"',
+                                              JSON.stringify(this_survey));
+    $("#survey_preview").html(survey_template);
+  });
+}
+
+function synch_surveys(){
+	dbx.filesListFolder({path:"/surveys"})
+		.then(function(result){
+			result.entries.forEach(function(entry){
+				if(typeof(master_json.surveys.user_surveys[entry.name.toLowerCase()]) == "undefined"){
+					dbx.sharingCreateSharedLink({path:entry.path_lower})
+						.then(function(shared_link){
+							$.get(shared_link.url.replace("www.","dl."),function(result){
+								var survey_name = entry.name.toLowerCase().replace(".csv","");
+								master_json.surveys.user_surveys[survey_name] = Papa.parse(result).data;
+							});
+						})
+						.catch(function(error){
+              report_error("problem synching the surveys, possibly due to getting the location of a specific survey", "problem synching the surveys, possibly due to getting the location of a specific survey");
+						});
+				}
+			});
+		})
+		.catch(function(error){
+      //assume that the survey folder doesn't exist yet - reimplement error if it seems like some intervention is needed here.
+      
+      /*
+      report_error("problem synching the surveys, possibly due to listing surveys within the survey folder.", "problem synching the surveys, possibly due to listing surveys within the survey folder.");
+      */
+		});
+};
+
+function update_exp_survey(survey_name,survey_content){
+	if(typeof(exp_json.surveys) == "undefined"){
+		exp_json.surveys = {};
+	}
+	exp_json.surveys[survey_name] = survey_content;
+}
+
+
+//////////////////////
+// element triggers //
+//////////////////////
+
+$("#delete_survey_btn").on("click",function(){
+	bootbox.confirm("Are you sure you want to delete this survey?",function(confirmed){
+		if(confirmed){
+			var survey_name = $("#survey_select").val().split("|")[1].toLowerCase().replace(".csv","") + ".csv";
+			delete master_json.surveys.user_surveys[survey_name];
+			dbx.filesDelete({path:"/surveys/" + survey_name})
+				.then(function(result){
+					custom_alert("Succesfully deleted <b>" + survey_name + "</b>");
+					$('#survey_select option[value="' + $("#survey_select").val() + '"]').remove();
+					$("#survey_select").val("default|demographics.csv");
+					create_survey_HoT(master_json.surveys.default_surveys["demographics.csv"]);
+					$("#save_btn").click();
+				})
+				.catch(function(error){
+        	report_error("problem deleting the survey.", "problem deleting the survey.");
+				});
+		}
+	});
+});
+
+$("#new_survey_button").on("click",function(){
+	if($("#survey_select").val() == null){
+		bootbox.alert("Please select a survey that already exists to base the new survey on. To do this, click on the dropdown list that has 'Please select a survey' written in it.");
+	} else {
+		bootbox.confirm("The new survey will be based on the one that you've selected, are you sure you want to confirm", function(result){
+			if(result){
+				bootbox.prompt({
+					title: "New Survey",
+					callback: function(survey_name){
+						survey_name = survey_name.toLowerCase().replaceAll(".csv","") + ".csv";
+						if(typeof(master_json.surveys.user_surveys[survey_name] == "undefined")){
+							var survey_content = survey_HoT.getData();
+							master_json.surveys.user_surveys[survey_name] = survey_content;
+							var survey_value   = "user|" + survey_name;
+							$("#survey_select").append($("<option>",{
+								text  : survey_name,
+								value : survey_value,
+								class : "bg-info text-white"
+							}));
+							$("#survey_select").val(survey_value);
+							custom_alert("<b>"+survey_name+"</b> created succesfully");
+						} else {
+							bootbox.alert("Survey name already exists");
+						}
+					}
+				});
+			}
+		});
+	}
+});
+
+
+
+$("#pills-preview-tab").on("click",function(){
+  var this_survey =  survey_HoT.getData();
+  preview_survey(this_survey);
+});
+
+$("#rename_survey_btn").on("click",function(){
+  if($("#survey_select").val() !== null){
+    var old_survey_name = $("#survey_select").val().split("|")[1];
+    if(typeof(master_json.surveys.default_surveys[old_survey_name]) !== "undefined"){
+      bootbox.alert("You can't rename default experiments.");
+    } else {
+			switch(dev_obj.context){
+				case "localhost":
+					bootbox.prompt("What would you like to call this survey instead?",function(new_survey_name){
+						eel.expose(update_master_surveys);
+						function update_master_surveys(old_survey_name,
+																					 new_survey_name){
+							master_json.surveys.user_surveys[new_survey_name] = master_json.surveys.user_surveys[old_survey_name];
+							delete(master_json.surveys.user_surveys[old_survey_name]);
+							
+							
+							//code here to remove the option 
+							
+							update_master_json();
+							list_surveys();
+							$("#survey_select").val(new_survey_name);
+							
+							
+						}
+						
+						eel.rename_survey(old_survey_name.toLowerCase()
+																						 .replace(".csv","") + ".csv",
+															new_survey_name.toLowerCase()
+																						 .replace(".csv","") + ".csv");
+						
+
+        
+					});
+        break;
+				case "server":
+					//it must be a dropbox renaming, right?
+					break;
+			
+			
+      }
+    }
+  }  
+});
+
+$("#save_survey_btn").on("click",function(){
+	if($("#survey_select").val() !== null){
+		var survey_name     = $("#survey_select").val().split("|");
+		var survey_content  = Papa.unparse(survey_HoT.getData());
+    dbx_obj.new_upload({
+      path    : "/surveys/" + survey_name[1].replace(".csv","") + ".csv",
+      contents : survey_content,
+      mode    : "overwrite"
+    },function(){
+      custom_alert("Success!");
+      update_master_json();
+    },function(error){
+      custom_alert("error - check console!");
+      console.dir(error);
+    },
+    "filesUpload");
+    
+    switch(dev_obj.context){
+      case "localhost":
+        eel.save_survey(survey_name[1].toLowerCase()
+                                   .replace(".csv","") + ".csv",
+                        survey_content);
+        break;
+      default:
+        //nothing?
+        break;
+    }
+	}
+});
+
+$("#survey_select").on("change",function(){  
+  var this_survey = $("#survey_select").val().split("|");
+  if(this_survey[0] == "default"){
+    $("#survey_select").removeClass("bg-light");
+    $("#survey_select").addClass("bg-info");
+    $("#survey_select").addClass("text-white");
+
+    create_survey_HoT(master_json.surveys.default_surveys[this_survey[1]]);
+    $("#spreadsheet_preview_tabs").show();
+  } else if(this_survey[0] == "user"){
+    $("#survey_select").removeClass("bg-info");
+    $("#survey_select").removeClass("text-white");
+    $("#survey_select").addClass("bg-light");
+
+		create_survey_HoT(master_json.surveys.user_surveys[this_survey[1]]);
+    $("#spreadsheet_preview_tabs").show();
+  } else {
+    bootbox.alert("It's not clear whether this is supposed to be a default or user_trialtype");
+  }
+});
+
+if(dev_obj.dev_location == "Surveys.html"){
+  list_surveys();
+}
+</script>

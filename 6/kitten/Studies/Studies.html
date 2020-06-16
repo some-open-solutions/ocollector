@@ -1,0 +1,58 @@
+<!--
+/*  Collector (Garcia, Kornell, Kerr, Blake & Haffey)
+    A program for running experiments on the web
+    Copyright 2012-2020 Mikey Garcia & Nate Kornell
+
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License version 3 as published by
+    the Free Software Foundation.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>
+
+		Kitten release (2019-2020) author: Dr. Anthony Haffey (a.haffey@reading.ac.uk)
+*/
+
+-->
+
+<!-- Scripts needed for simulator -->
+<link rel="stylesheet" type="text/css" href="Studies/StudiesStyle.css" media="screen" />
+<style>
+#authorised_interface{
+  position:absolute;
+  top:30px;
+	width:100%;
+}
+</style>
+<script>
+window.onbeforeunload = function() {
+	if($("#save_status").html() !== "" & $("#save_status").html() !== "Up to date"){
+		//bootbox.alert("If you haven't completed the experiment, please type CTRL-S to save your data and e-mail it to the researcher and explain why you didn't complete the study.");
+		return "Please do not try to refresh - you will have to restart if you do so.";
+	}
+};
+</script>
+
+<nav class="navbar navbar-primary bg-white fixed-top fixed-top-2" id="sim_navbar">
+	<div id="load_experiment_html"></div>
+  <div id="interfaces_html"></div>
+  <script>
+  $("#load_experiment_html").load("Studies/SheetEditor/LoadSqlExperiment.html");
+  $("#interfaces_html").load("Studies/Interfaces.html");
+  </script>
+</nav>
+
+<div id="authorised_interface">
+  <div id="experiment_editor_div"></div>
+  <div id="trialtype_editor_div"></div>
+</div>
+<script>
+$("#experiment_editor_div").load(collector_map["SheetEditor.html"]);
+$("#trialtype_editor_div").load(collector_map["TrialTypeEditor.html"]);
+</script>

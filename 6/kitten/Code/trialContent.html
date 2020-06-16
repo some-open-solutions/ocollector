@@ -1,0 +1,126 @@
+<!-- 
+/*  Collector (Garcia, Kornell, Kerr, Blake & Haffey)
+    A program for running experiments on the web
+    Copyright 2012-2016 Mikey Garcia & Nate Kornell
+
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License version 3 as published by
+    the Free Software Foundation.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>
+ 		
+		Kitten release (2019) author: Dr. Anthony Haffey (a.haffey@reading.ac.uk)		
+*/
+-->
+<form id="content" method="POST" action="javascript:submit_form()"></form>
+
+<input type="hidden" name="Duration"                 id="Duration"                 form="content">
+<input type="hidden" name="Focus"                    id="Focus"                    form="content">
+<input type="hidden" name="First_Input_Time"         id="First_Input_Time"         form="content">
+<input type="hidden" name="Last_Input_Time"          id="Last_Input_Time"          form="content">
+<input type="hidden" name="Start_Time_Date"          id="Start_Time_Date"          form="content">
+<input type="hidden" name="End_Time_Date"            id="End_Time_Date"            form="content">
+<input type="hidden" name="Start_Time_Date_Numeric"  id="Start_Time_Date_Numeric"  form="content">
+<input type="hidden" name="End_Time_Date_Numeric"    id="End_Time_Date_Numeric"    form="content">
+
+
+<script>
+
+$("#Start_Time_Date").val(Date());
+$("#Start_Time_Date_Numeric").val((new Date()).getTime());
+function submit_form() {
+	var all_timers = window.Trial.all_timers;
+	
+	for (var i=0; i<all_timers.length; ++i) {
+		all_timers[i].stop();
+	}
+	
+	//console.dir ("timers stopped: " + i);
+	
+	var serialized_data = $("#content").serialize();
+	var data = Trial.unserialize(serialized_data);
+	var scored_data = Trial.scoring(data);
+
+	console.dir("hi there");
+	
+
+	Collector_Experiment.end_trial(
+		scored_data,
+		Trial.raw_inputs,
+		Trial.global_data
+	);
+}
+Collector_Experiment = parent.Collector_Experiment;
+trial_data = Collector_Experiment.get_trial_data();
+console.dir("trial_data");
+console.dir(trial_data);
+Trial.raw_inputs = trial_data.inputs;
+
+//if(parent.sql_toggle == true){
+
+var trialtype = trial_data.inputs.procedure["trial type"].toLowerCase();
+var this_trialtype = parent.this_exp.trialtypes[trialtype];
+
+file_object = {
+	"template.html":'', 
+	"prepareInputs.js":'', 
+	"scoring.js":'',
+};	
+
+
+
+var files = this_trialtype;
+
+template = files["template.html"] !== "undefined" ? files["template.html"] : '';
+scoring  = files["scoring.js"]    !== "undefined" ? files["scoring.js"]    : '';
+prepare_inputs = files["prepareInputs.js"] !== "undefined" ? files["prepareInputs.js"] : '';	
+
+trial_data.type = {
+	template 		: template,
+	prepare_inputs	: prepare_inputs,
+	scoring			: scoring,	
+}
+
+console.dir("trial_data.type");
+console.dir(trial_data.type);
+
+/*
+if(typeof(parent.GLOBAL) !== "undefined"){
+	var this_pos = trial_data.globals.position;
+	var trialtype = trial_data.inputs.procedure["trial type"].toLowerCase();
+	
+	//choosing to load the "user version" of a trialtype rather than the default
+	if(typeof(parent.sql_trialtypes.user_trialtypes[trialtype]) !== "undefined"){
+		var this_trialtype = parent.sql_trialtypes.user_trialtypes[trialtype];
+	} else {		
+		var this_trialtype = parent.sql_trialtypes.default_trialtypes[trialtype];
+	};
+	
+	var template      	= this_trialtype["template.html"];
+	var prepare_inputs  = this_trialtype["prepareInputs.js"];
+	var scoring  		= this_trialtype["scoring.js"];
+	if(parent.GLOBAL.simulator == true){
+		console.dir("trial_data");		
+		trial_data.type = {
+			template 		: template,
+			prepare_inputs	: prepare_inputs,
+			scoring			: scoring,	
+		}
+	}
+
+};
+*/
+
+Trial.load_inputs(trial_data.inputs);
+Trial.load_trial_type(trial_data.type);
+Trial.load_globals(trial_data.globals);
+Trial.run();
+
+</script>
