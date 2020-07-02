@@ -1,0 +1,24 @@
+{
+	"keys":{
+		"subtitle":"response keys",
+		"text":"Which keys do you want the participant to be able to respond with? Note that if you turn off the <b>End trial on key press</b> option the trial will not end when the participant presses one of the valid keys. However, the only key response that will be stored is the most recent one before the trial ended."
+	},
+	"type":{
+		"checkbox": "If you want the participant to be able to select multiple options, use a checkbox. If you only want them to be able to select one option, use a 'Radio'",
+		"date": "This allows standardised storage of date. Note that this works better in Chrome than firefox. ",
+		"dropdown":"A standard dropdown list. ",
+		"google_slide": "This is not YET in action. But will be :-) ",
+		"instruct": "Allows you to type in instructions. ",
+		"likert": "Participants can click on one of the options that they want. ",
+		"number": "Only allows participants to type in a number. ",
+		"para": "Gives the participant a large text box to write in their answer. ",
+		"radio": "Allows the participant to only select one option in a list (unlike checkboxes).",
+		"shortAnswer": "Gives participant space for a small paragraph for their response. ",
+		"slider": "The participant can slide between values you specify. ",
+		"text": "Gives the participant a text box to write in their answer."
+	},
+	"values":{
+		"subtitle":"What each answer is worth",
+		"text":"<b>Values</b> work in parallel to <b>answers</b>, in which you associate a score for each answer. For example, if the answers the participant could choose were 'strongly agree|agree|disagree|strongly disagree' and the values were '3|2|1|0', then the value of strongly agree would be 3, agree would be 2, disagree would be 1, and strongly disagree would be 0. These value of the participant's response is stored by itself in the data, and can also be used when adding together the <b>score</b> across multiple items. To get the score across multiple items, create a column with 'score:[your score name']. Once you've created this column, click on any cell in that column to get more guidance."
+	}
+}

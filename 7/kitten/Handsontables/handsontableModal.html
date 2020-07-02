@@ -1,0 +1,171 @@
+<style>
+#ace_cell{
+	width:100%;
+	height:100%;
+}
+#cell_apply_color{
+	background-color:black;
+	color:white;
+}
+#cell_editor_div{
+	width:90%;	
+	position:fixed;
+	display:in-line;
+	padding:5%;
+	/* margin-left:30px; */
+	margin-top:100px;
+	margin-bottom:100px;
+	border-style: solid;
+	border-color: #069;
+	border-width:10px;
+	border-radius:10px;
+	z-index: 1000;
+	background-color:white;
+	display:none;
+}
+#close_cell_editor{
+	position:absolute;
+	top:0px;
+	right:0px;
+	margin: 2px;
+}
+#cell_select_color{
+	display:none;
+}
+#cell_text_size{
+	width:70px;
+}
+.cell_button{
+	margin:2px;
+}
+
+</style>
+
+
+<div id="cell_editor_div">
+	<button id="close_cell_editor" class="btn btn-primary">X</button>
+	<table style="width:100%;height:100%">
+		<tr>
+			<td>
+				<button class='btn btn-primary cell_button' id='cell_add_brs'>Add &lt;br&gt;s</button>				
+				<div class="btn-group" role="group">
+					<button class='btn btn-primary cell_button' id='cell_make_bold'><b>B</b></button>
+					<button class='btn btn-primary cell_button' id='cell_make_italic'><em>I</em></button>
+					<button class='btn btn-primary cell_button' id='cell_make_underline'><u>U</u></button>
+				</div>				
+				<button class='btn btn-primary cell_button' id='cell_make_header'><u>H</u></button>				
+				<div class="btn-group" role="group">
+					<button class="btn" id="cell_apply_color"> </button>
+					<input type="color" id="cell_select_color" value="black">
+					<button class="btn btn-primary" id="cell_select_color_activate">↓</button>
+				</div>				
+				<button class="btn btn-primary cell_button" id="cell_text_size_btn">Size</button>
+			</td>
+			<td>
+				<div style="width:100%; height:100%;">
+					Auto-Preview (light): 
+					<div class="btn-group" role="group" aria-label="Basic example">
+						<button type="button" id="cell_auto_preview_on" class="cell_preview_on_off btn btn-primary">On</button>
+						<button type="button" id="cell_auto_preview_off" class="cell_preview_on_off btn btn-outline-primary">Off</button>
+					</div>
+					<button class="btn btn-Primary" id="cell_full_preview_btn">Full Preview</button>					
+				</div>
+			</td>
+		</tr>
+		<tr>
+			<td style="width:50%;height:100%">
+				<div id="ace_cell"></div>
+			</td>
+			<td style="width:50%; height:100%">
+				<iframe id="cell_preview_iframe" style="width:100%; height:100%"></iframe>
+			</td>
+		</tr>
+	</table>
+	</div>
+</div>
+
+<script>
+var cell_editor = ace.edit("ace_cell");                                                           //create new Ace editor for editing the cell
+cell_editor.getSession().setUseWorker(false);                                                     
+cell_editor.setTheme("ace/theme/chrome");                                                         
+cell_editor.getSession().setMode("ace/mode/html");                                                
+cell_editor.$blockScrolling = Infinity;                                                           
+
+cell_editor.setOptions({                                                                          //set the standard options used for the trialtype editor
+	enableBasicAutocompletion: true,                                                                
+	enableSnippets: false,                                                                          
+	enableLiveAutocompletion: true,                                                                 
+	maxLines: 50,                                                                                   
+	minLines: 30,                                                                                   
+	tabSize:2,                                                                                      
+	wrap:true,                                                                                      
+});                                                                                               
+cell_editor.$blockScrolling = Infinity;                                                           
+																																																	
+cell_editor.on("focus",function(){                                                                //give the same advice for this as for trialtypes
+	helperActivate("Trialtype Code", "","trialtype_code");                                          
+});                                                                                               
+																																																	
+$("#cell_editor_div").css("height",window.innerHeight-120);                                       
+																																																	
+																																																	
+$("#cell_auto_preview_off").on("click",function(){                                                //turn off the automatic previewing of the simple version of the text (i.e. without all the libraries)
+	$("#cell_auto_preview_off").removeClass("btn-outline-primary");                                 
+	$("#cell_auto_preview_off").addClass("btn-primary");                                            
+	$("#cell_auto_preview_on").removeClass("btn-primary");                                          
+	$("#cell_auto_preview_on").addClass("btn-outline-primary");                                     
+});                                                                                               
+$("#cell_auto_preview_on").on("click",function(){                                                 //turn off the automatic previewing of the simple version of the text (i.e. without all the libraries)
+	$("#cell_auto_preview_on").removeClass("btn-outline-primary");                                  
+	$("#cell_auto_preview_on").addClass("btn-primary");                                             
+	$("#cell_auto_preview_off").removeClass("btn-primary");                                         
+	$("#cell_auto_preview_off").addClass("btn-outline-primary");                                    
+});                                                                                               
+																																																	
+$("#cell_full_preview_btn").on("click",function(){                                                //generate a preview of how the code should actually look in Collector
+	doc = document.getElementById('cell_preview_iframe').contentWindow.document;                    
+	doc.open();                                                                                     
+	doc.write(libraries + cell_editor.getValue()); 																									// note that the difference here is the libraries
+	doc.close();                                                                                    
+});                                                                                               
+
+cell_editor.getSession().on('change', function() {                                                //automatically update the preview with simplified version (if auto-preview is switched on
+  //insert content from ace editor into iframe                                                    
+	if($("#cell_auto_preview_on").hasClass("btn-primary")){                                         
+		doc = document.getElementById('cell_preview_iframe').contentWindow.document;                  
+		doc.open();                                                                                   
+		doc.write(cell_editor.getValue());                                                            
+		doc.close();                                                                                  
+	}	                                                                                              
+});                                                                                               
+
+cell_editor.completers.push({                                                                     // same suggestions as for trialtype editor, as I think this still applies
+	getCompletions: function(cell_editor, session, pos, prefix, callback) {                         
+		callback(null, [                                                                              
+			{value: "Trial.add_response()", score: 1000, meta: "add row to responses"},                 
+			{value: "Trial.submit()",     	score: 1000, meta: "end trial - C"},                        
+			{value: "Trial.elapsed()",    	score: 1000, meta: "since trial start - C"},                
+			{value: "Trial.set_timer()",  	score: 1000, meta: "at trial start - C"},                   
+      {value: "Trial.set()",        	score: 1000, meta: "for another trial -C"},                 
+      {value: "Trial.get()",        	score: 1000, meta: "from an earlier trial -C"}              
+		]);                                                                                           
+	}                                                                                               
+});                                                                                               
+
+$("#cell_add_brs").on("click",function(){                                                         // This is for users who have copied and pasted from a document, and need to add the line breaks
+	var cell_contents = cell_editor.getValue()                                                      
+																 .replaceAll("<br>\n","\n")                                       
+																 .replaceAll("\n<br>","\n")                                       
+																 .replaceAll("\n","<br>\n");
+			cell_editor.setValue(cell_contents);
+			cell_editor.setValue(cell_editor.getValue(), -1);
+});                                                                                               
+
+$("#close_cell_editor").on("click",function(){                                                    // Close and save changes
+	this_sheet.setDataAtCell(this_selection.start.row,                                              
+													 this_selection.start.col,                                              
+													 cell_editor.getValue());                                               
+	$("#cell_editor_div").fadeOut();                                                                
+});                                                                                               
+</script>
+<script src="Handsontables/CellEditorKeyboard.js"></script>

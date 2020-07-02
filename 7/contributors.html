@@ -1,0 +1,55 @@
+<style>
+.image-wrapper {
+	width: 100%;
+	height: 100%;
+	background-color: #000;
+	border-radius: 50%;
+	margin: 0;
+	padding: 0;
+}
+.ppimg {
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	padding: 0;
+	display: block;
+	border-radius: 50%;
+}
+</style>
+
+<em>In Chronological order</em>
+<div class='table' id="table_div"></div>
+
+
+<script>
+
+$.get("hall_of_fame.csv",function(result){
+
+  var current_contributors = ["Dr. Adam Blake","Dr. Anthony Haffey"];
+			
+
+  console.dir("hall of fame coming:");
+  var table_data = Papa.parse(result, {
+    header:true,
+    skipEmptyLines:true
+  });
+  console.dir(table_data.data);
+  var table_html = "<table style='width:100%'><tbody>";
+  table_data.data.forEach(function(row){
+
+    if(current_contributors.indexOf(row.Name) !== -1){
+      tr_class = "class='bg-primary text-white'";
+    } else {
+      tr_class="";
+    }
+    table_html += "<tr " + tr_class + ">" +
+                      "<td><img class='ppimg' style='width:100px; height:100px;' src='" + row.photo+ "'/></td>"+
+                      "<td>" + row.Name + "</td>" +
+                      "<td>" + row.Blurb + "</td>" +
+                    "</tr>";
+
+  });
+  table_html += "</tbody></table>";
+  $("#table_div").html(table_html);
+});
+</script>

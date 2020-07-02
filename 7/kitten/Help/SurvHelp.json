@@ -1,0 +1,52 @@
+{
+	"answers":{
+		"subtitle":"Answers the participant can choose",
+		"text":"A single answer or list of answers the participant can choose. Put a pipe character ( | ) between each possible answer. If you're having problems finding the pipe key, you can highlight the pipe in the brackets and then copy and paste it."
+	},
+  "feedback":{
+    "subtitle":"Tell the participant about each answer",
+    "text": "You can list what feedback you associate with each response. Put a pipe | between each feedback"
+  },
+  "feedback_color":{
+    "subtitle":"What color is each feedback",
+    "text":"The colors you want to associate with each feedback (e.g. green for the correct ones, and red for the wrong ones. Put a pipe | between each feedback color"	
+	},
+  "item_name":{
+		"subtitle":"Column name in data sheet",
+		"text":"The <b>item_name</b> will be what the column header is in your data sheet. So make sure it's unique!"
+	},
+	"no_text":{
+		"subtitle":"No text on left side of survey",
+		"text":"If you have an item, in which you want the content that would normally be on the right side of the survey to take who whole width of it, put <b>'on'</b> in this column."
+	},
+	"optional":{
+		"subtitle":"Can a participant ignore this item?",
+		"text":"The default assumption is that a participant doesn't need to respond to any particular item in your survey. If they need to reply to an item then put a <b>no</b> in this column."
+	},
+	"shuffle":{
+		"subtitle":"randomise order of items",
+		"text": "In this column, if you want to randomise the order of questions, you can either simply write <b>'on'</b> in the items you want randomised, or you can use a different words for different groups of items you want randomised together. For example, if you wanted the first and second half of your items shuffled, you could write 'first' in the shuffle column for each of the first half of the items, and 'second' for each of the second half of the items. The order of items is preserved otherwise, so any items without a word in the shuffle column will not be shuffled. If you write 'off' in this column, the item will <b>not</b> be shuffled."
+	},
+	"text":{
+		"subtitle":"Question text",
+		"text":"This will be presented on the left side of the survey. This is useful if you have a question with responses for this item. If you want to have no text for this row of the survey, create a column <b>no_text</b> in your sheet, and turn it on. If you want the text to take up the whole row, then under the <b>type</b> header, choose 'instruct'"
+	},
+	"type":{
+		"checkbox": "If you want the participant to be able to select multiple options, use a checkbox. If you only want them to be able to select one option, use a 'Radio'",
+		"date": "This allows standardised storage of date. Note that this works better in Chrome than firefox. ",
+		"dropdown":"A standard dropdown list. ",
+    "google_slide": "This is not YET in action. But will be :-) ",
+		"instruct": "Allows you to type in instructions. ",
+		"likert": "Participants can click on one of the options that they want. ",
+		"number": "Only allows participants to type in a number. ",
+		"para": "Gives the participant a large text box to write in their answer. ",
+		"radio": "Allows the participant to only select one option in a list (unlike checkboxes).",
+		"shortAnswer": "Gives participant space for a small paragraph for their response. ",
+		"slider": "The participant can slide between values you specify. ",
+		"text": "Gives the participant a text box to write in their answer."
+	},
+	"values":{
+		"subtitle":"What each answer is worth",
+		"text":"<b>Values</b> work in parallel to <b>answers</b>, in which you associate a score for each answer. For example, if the answers the participant could choose were 'strongly agree|agree|disagree|strongly disagree' and the values were '3|2|1|0', then the value of strongly agree would be 3, agree would be 2, disagree would be 1, and strongly disagree would be 0. These value of the participant's response is stored by itself in the data, and can also be used when adding together the <b>score</b> across multiple items. To get the score across multiple items, create a column with 'score:[your score name']. Once you've created this column, click on any cell in that column to get more guidance."
+	}
+}
