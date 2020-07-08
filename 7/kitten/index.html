@@ -27,61 +27,47 @@
 -->
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
-<style>
-#top_navbar{
-  height:50px;
-  padding:5px;
-}
-</style>
-
 <!--
-
-The following system is to avoid the need for php's require functionality to embed pages within pages. It should also (hopefully) avoid some of the errors you get if you have link and script tags in a page. 
-
+	Publicly available javascript packages
 -->
-<script src="../libraries/jquery-3.3.1.min.js"></script>
+<script src= "../libraries/jquery-3.3.1.min.js"></script>
 <script src= "../libraries/bootstrap.4.0.min.js"></script>            
 <script src= "../libraries/bootbox.5.4.min.js"></script>            
 <script src= "../libraries/popper.min.js"></script>
-
-<link rel="stylesheet" type="text/css" href="../libraries/bootstrapCollector.css">
-<link rel="stylesheet" type="text/css" href="../libraries/bootbox.fix.css">
-
 <script src= "../libraries/dropbox.2.5.13.min.js"></script>
 <script src= "../libraries/dropbox.dropins.js"></script>
 <script src= "../libraries/papaparse.4.3.6.min.js"></script>
 <script src= "../libraries/ace-master/ace.js"></script>
 <script src= "../libraries/ace-master/ext-language_tools.js"></script>
+<script src= "Handsontables/handsontables.full.js"></script>
 
-<!-- handsontable core code and collector specific code -->
+
+<!--
+	Publicly available css packages
+-->
+<link rel="stylesheet" type="text/css" href="../libraries/bootstrapCollector.css">
+<link rel="stylesheet" type="text/css" href="../libraries/bootbox.fix.css">
+
+
+<!-- 
+	handsontable core code and collector specific code 
+-->
 <div id="handsontable_html"></div>
 <script>
-$("#handsontable_html").load("Handsontables/handsontableModal.html");
+$("#handsontable_html").load("Handsontables/CellEditor.html");
 </script>
 <link rel="stylesheet" type="text/css" href="Handsontables/handsontables.full.css">
-<script src= "Handsontables/handsontables.full.js"></script>
+
+<!--
+	Collector specific files
+-->
 <script src= "Handsontables/HandsontablesFunctions.js"></script>
-
-
 <script src= "Code/Collector.js"></script>
 <script src= "Code/BrowserCheck.js"></script>
 <script src= "CollectorMap.js"></script>
 <script src= "Code/SessionCheck.js"></script>
-
-<script>
-collector_map = this_map('');
-</script>
-
-<script src="Code/initiateCollector.js"></script>
-
+<script> collector_map = this_map(''); </script>
 <link rel="stylesheet" type="text/css" href="Style.css">
-
-
-<!--
-<sc ript src = "Code/initiateCollector.js"></sc ript>
-<sc ript src = "ContextStart.js"></sc ript>
-<sc ript src = "MobileCheck.js"></sc ript>
--->
 
 <nav class="navbar fixed-top navbar-light bg-primary navbar-expand-lg" id="top_navbar">
   <div id="logo_div"></div>
@@ -100,129 +86,69 @@ collector_map = this_map('');
     <button class="btn btn-primary">Documentation</button>
   </a>
   <button class="btn btn-outline-primary bg-white" id="help_btn" style="margin:2px; font-weight:bold">Help</button>
-  <div id="logout_div"></div>
+  <div id="platforms_div"></div>
 </nav>
 <table id="content_table" style="width:100%">
   <tr>
-    <td id="content_area">
-    </td>
+    <td id="content_area"></td>
     <script>
-      var navbar_names  = ["Studies","Surveys","Boost","Data"];
+      var navbar_names  = ["Studies","Surveys","Mods","Data"];
       var pages         = ["Studies/Studies.html",
                            "Surveys/Surveys.html",
-                           "Boost/Boost.html",
+                           "Mods/Mods.html",
                            "Data/Data.html"];
       navbar_names.forEach(function(this_name,index){
-        $("#content_area").append("<div class='collapse multi-collapse' style='width:100%' id='collapse_" + this_name +"' >");
+        $("#content_area").append("<div class='collapse multi-collapse' " +
+																			 "style='width:100%' "+
+																			 "id='collapse_" + this_name +"' >");
         $("#collapse_" + this_name).load(pages[index]);
       });
-
     </script>
     <td id="help_area" class="help_class"></td>
   </tr>
 </table>
 <div id="dropbox_initiate_div"></div>
-<div id="login_div"></div>
+<div id="register_div"></div>
 <script>
 navbar_html = "";
 navbar_names.forEach(function(name,index){
-  navbar_html += '<label class="btn btn-primary select_page" id="option_'+name+'"  data-toggle="collapse" href="#collapse_'+name+'" role="button" aria-expanded="false" aria-controls="#collapse_'+name+'">'+
-    '<input type="radio" style="display:none" name="options" autocomplete="off" >'+name+
-  '</label>';
+  navbar_html +=  '<label class="btn btn-primary select_page"' +
+										'id="top_tab_' + name+'" ' +  
+										'data-toggle="collapse" ' +
+										'href="#collapse_' + name+'" ' +
+										'role="button" ' +
+										'aria-expanded="false" '+
+										'aria-controls="#collapse_' + name + '">'+
+											'<input type="radio" ' +
+												'style="display:none" ' +
+															 'name="options" ' +
+												'autocomplete="off" >' +
+											name +
+									'</label>';
 });
 $("#page_selected").html(navbar_html);
 
 $(".select_page").on("click",function(){
-
-  //hide everything
-  $('.collapse').hide();//collapse('hide');
-
-  //show the current page
-  $("#collapse_" + this.id.replace("option_","")).show();
-
-  //$("#collapse_" + ).show();
-  //that is not the associated page
-
-  $('.select_page').css("font-weight","normal");
-  $(this).css("font-weight","bold");
-  $('.select_page').removeClass("bg-white");
+	$('.collapse').hide();														 			 // hide everything
+	$("#collapse_" + this.id.replace("top_tab_","")).show(); // show the current page
+  $('.select_page').css("font-weight","normal");					 // make all tabs normal font-weight
+  $(this).css("font-weight","bold");											 // but then make the current tab bold
+  $('.select_page').removeClass("bg-white");														
   $('.select_page').removeClass("text-primary");
   $(this).addClass("bg-white");
   $(this).addClass("text-primary");
-  var this_id = this.id;
 });
-if($("#collector_account_email").html() == "--undefined--"){
-  highlight_account("dropbox_account_email");
-  highlight_account("collector_account_email");
-}
 $("#help_area").load("Help/Help.html");
 $("#logo_div").load("../logos/logo.html");
-$("#logout_div").load("Platforms.html");
-$("#login_div").load("LoginInterface.html");
-
+$("#platforms_div").load("Platforms.html");
+$("#register_div").load("Register.html");
 </script>
+<script src="ContextStart.js"></script>
+<script src="MobileCheck.js"></script>
 
-<script>
-
-// the below was meant to be a tidier system
-files_pipeline = {
-  files : [
-           /*
-           ["../libraries/bootstrap.4.0.min.js"],             
-           ["../libraries/bootbox.5.4.min.js"],             
-           ["../libraries/popper.min.js"],
-           ["../libraries/bootstrapCollector.css"],
-           ["../libraries/bootbox.fix.css"],
-           ["../libraries/dropbox.2.5.13.min.js"],
-           ["../libraries/dropbox.dropins.js"],
-           ["../libraries/papaparse.4.3.6.min.js"],
-           ["../libraries/ace-master/ace.js"],
-           ["../libraries/ace-master/ext-language_tools.js"],
-           ["Handsontables/handsontables.full.js"],
-           ["Handsontables/HandsontablesFunctions.js"],
-           ["Handsontables/handsontables.full.css"],
-           ["jsFunctions.js"],
-           ["Code/BrowserCheck.js"],
-           ["CollectorMap.js"],
-           ["collector_map = this_map('');"],
-           ["Style.css"],
-           */
-           ["ContextStart.js"],
-           ["MobileCheck.js"]],
-  activate:function(){
-  
-    var this_file = files_pipeline.files.shift();
-    if(this_file[0].indexOf(".js") !== -1){           // i.e. js
-      $.getScript(this_file,function(){
-        if(files_pipeline.files.length > 0){
-          files_pipeline.activate();
-        }
-      });
-    } else if(this_file.length > 1){                  // i.e. html
-      $(this_file[0]).load(this_file[1],function(){
-        if(files_pipeline.files.length > 0){
-          files_pipeline.activate();
-        }
-      });
-    } else if(this_file[0].indexOf(".css") !== -1) {  // i.e. css
-      $.ajax({
-        url: this_file,
-        dataType: 'text',
-        success: function(data) {
-        
-          $('<style type="text/css">\n' + data + '</style>').appendTo("head");
-          if(files_pipeline.files.length > 0){
-            files_pipeline.activate();
-          }                 
-        }                  
-      });
-    } else {                                          // code to run
-      eval(this_file[0]);
-      if(files_pipeline.files.length > 0){
-        files_pipeline.activate();
-      } 
-    }
-  }
-}
-files_pipeline.activate();
-</script>
+<!--
+	CollectorLive.js starts an automatic check every 30 seconds to make sure that either:
+	- the internet is still connected (if using the dropbox version)
+	- the localhost is still active   (if using the installed version)
+-->
+<script src="Code/CollectorLive.js"></script>

@@ -89,6 +89,11 @@ function load_help(this_list){
   }, 500,function(){
     editor.resize();
   });
+	$("#survey_preview").animate({
+		"width": window.innerWidth - helper_width
+	}, 500,function(){
+		cell_editor.resize();
+	});
 }
 load_help(Object.keys(help_dictionary));
 
@@ -123,11 +128,11 @@ function helperActivate(help_title, cellValue,help_type){
     $("#help_text").html("Which keys do you want the participant to be able to respond with? Note that if you turn off the <b>End trial on key press</b> option the trial will not end when the participant presses one of the valid keys. However, the only key response that will be stored is the most recent one before the trial ended.");
 	}
 
-  // give Snippet advice
+  // give Mod advice
   //////////////////////
-  if(help_type == "snippet"){
+  if(help_type == "mods"){
     $("#help_subtitle").html("General Advice");
-    $("#help_text").html("Snippets are useful bits of code to use in surveys. <br><br>To preview a snippet either click on the <b>preview</b> button or press CTRL and ENTER at the same time. If you only want to preview a small part of the code, try highlighting the specific code and then click <b>preview</b> or press CTRL-ENTER");
+    $("#help_text").html("Mods are useful bits of code to use in surveys. <br><br>To preview a mod either click on the <b>preview</b> button or press CTRL and ENTER at the same time. If you only want to preview a small part of the code, try highlighting the specific code and then click <b>preview</b> or press CTRL-ENTER");
   }
 
 	// give Condition advice
@@ -159,36 +164,37 @@ function helperActivate(help_title, cellValue,help_type){
 	if (help_type == "survey"){
 		
 		if(help_title == "type"){
+			
 			$("#help_subtitle").html("What type of item?");
-			var item_type_html = 'You can choose from the following types of survey items: <br>';
+			var item_type_html = 'You can choose from the following types of survey items: <br><br>';
 			var item_types = Object.keys(help_obj.surv.type);
 			item_types.forEach(function(item_type){
 				item_type_html += "<h6>" + item_type + "</h6>";
 				item_type_html += help_obj.surv.type[item_type] + "<br><br>";
 			});
-			item_type_html += "<div id='snippet_help'></div>";
+			item_type_html += "<div id='mod_help'></div>";
 			$("#help_text").html(item_type_html);
 
-			if(Object.keys(master_json.snippets).length > 0){
-				var snippet_help_text = "";
-				if(typeof(master_json.snippets._help)	 == "undefined"){
-					master_json.snippets._help = {};
+			if(Object.keys(master_json.mods).length > 0){
+				var mod_help_text = "";
+				if(typeof(master_json.mods._help)	 == "undefined"){
+					master_json.mods._help = {};
 				}
-				var snippet_names = Object.keys(master_json.snippets).filter(snippet_name => snippet_name !== "_help");
-				snippet_names.forEach(function(snippet_name){
-					if(typeof(master_json.snippets._help[snippet_name]) == "undefined"){
-						var snippet_content = master_json.snippets[snippet_name];
-						if(snippet_content.indexOf("/*-----help-----") == -1){
-							snippet_help_text += 	"<h6>"+snippet_name+"</h6>"+
+				var mod_names = Object.keys(master_json.mods).filter(mod_name => mod_name !== "_help");
+				mod_names.forEach(function(mod_name){
+					if(typeof(master_json.mods._help[mod_name]) == "undefined"){
+						var mod_content = master_json.mods[mod_name];
+						if(mod_content.indexOf("/*-----help-----") == -1){
+							mod_help_text += 	"<h6>"+mod_name+"</h6>"+
 																	  "The author of this snippet hasn't (yet) given any advice how to use it. If you are the author, you can add help by writing <br> /*-----help----- <br> then your advice, and then <br>----help-----*/";
 						}
-						snippet_help_text += snippet_content.split("-----help-----")[1];
-						master_json.snippets._help[snippet_name] = snippet_help_text;
+						mod_help_text += snippet_content.split("-----help-----")[1];
+						mod_help_text.mods._help[mod_name] = mod_help_text;
 					} else {
-						snippet_help_text += master_json.snippets._help[snippet_name];
+						mod_help_text += master_json.mods._help[mod_name];
 					}
 				});
-				$("#snippet_help").html("<br><h5 class='text-primary'>snippets</h5>" + snippet_help_text);
+				$("#mod_help").html("<br><h5 class='text-primary'>Mods</h5>" + mod_help_text);
 			}
 		} else {
 			if(typeof(help_obj.surv[help_title]) !== "undefined"){
@@ -260,12 +266,16 @@ $("#help_btn").on("click",function(){
     },500,function(){
       editor.resize();
     });
-    editor.resize(); 
-		$("#cell_editor_div").animate({
+		$("#cell_editor_div").css({
 			"width": window.innerWidth
 		}, 500,function(){
 			cell_editor.resize();
-		});		
+		});
+		$("#survey_preview").animate({
+			"width": window.innerWidth
+		}, 500,function(){
+			cell_editor.resize();
+		});
 	} else {
 		$("#help_area").show(500);
 		$("#help_btn").css("font-weight","bold");
@@ -283,13 +293,16 @@ $("#help_btn").on("click",function(){
     }, 500,function(){
       editor.resize();
     });
-		var helper_width = parseFloat($("#help_content").css("width").replace("px",""));
 		$("#cell_editor_div").animate({
 			"width": window.innerWidth - helper_width
 		}, 500,function(){
 			cell_editor.resize();
 		});
-    
+    $("#survey_preview").animate({
+			"width": window.innerWidth - helper_width
+		}, 500,function(){
+			cell_editor.resize();
+		});
     
 	}
 });

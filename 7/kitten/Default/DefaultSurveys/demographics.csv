@@ -1,9 +1,9 @@
-item_name,text,Type,Answers,Optional,Values
-Gender,Gender,likert,Male|Female|Other,No,
-Age,Age,Number,,No,
-Education,"Education (which level are you currently in, or is the highest you've completed)",Dropdown,"Some high school| High school graduate| Some college, no degree| Associate's degree| Bachelor's degree|Graduate degree (Master's, Doctorate, etc.)",No,
-English_Fluency,Do you speak English fluently?,likert,Yes|No,No,
-English_Age,"At what age did you start learning English? (write ""0"" if from birth)",Number,,No,
-Country,What is your country of residence?,Text,,No,
-Handedness,What is your preferred hand?,Likert,Left|Right|Both,No,
-ethnicity,If you would like to please state your ethnicity,Text,,Yes,
+item_name,text,Type,Answers,Optional,Values,side_by_side,btn_width
+Gender,Gender,likert,Male|Female|Other,No,,yes,100px
+Age,Age,Number,,No,,,
+Education,"Education (which level are you currently in, or is the highest you've completed)",Dropdown,"Some high school| High school graduate| Some college, no degree| Associate's degree| Bachelor's degree|Graduate degree (Master's, Doctorate, etc.)",No,,,
+English_Fluency,Do you speak English fluently?,likert,Yes|No,No,,yes,200px
+English_Age,"At what age did you start learning English? (write ""0"" if from birth)",Number,,No,,,
+Country,What is your country of residence?,Text,,No,,,
+Handedness,What is your preferred hand?,Likert,Left|Right|Both,No,,yes,100px
+ethnicity,If you would like to please state your ethnicity,Text,,Yes,,,

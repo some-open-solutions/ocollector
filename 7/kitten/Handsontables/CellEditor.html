@@ -68,7 +68,8 @@
 						<button type="button" id="cell_auto_preview_on" class="cell_preview_on_off btn btn-primary">On</button>
 						<button type="button" id="cell_auto_preview_off" class="cell_preview_on_off btn btn-outline-primary">Off</button>
 					</div>
-					<button class="btn btn-Primary" id="cell_full_preview_btn">Full Preview</button>					
+					<button class="btn btn-primary" id="cell_full_preview_btn">Full Preview</button>		
+					<button class="btn btn-primary" id="cell_undo_btn">Undo All</button>
 				</div>
 			</td>
 		</tr>
@@ -85,6 +86,9 @@
 </div>
 
 <script>
+var cell_editor_obj = {
+	content_before : ''
+}
 var cell_editor = ace.edit("ace_cell");                                                           //create new Ace editor for editing the cell
 cell_editor.getSession().setUseWorker(false);                                                     
 cell_editor.setTheme("ace/theme/chrome");                                                         
@@ -129,6 +133,10 @@ $("#cell_full_preview_btn").on("click",function(){                              
 	doc.close();                                                                                    
 });                                                                                               
 
+$("#cell_undo_btn").on("click",function(){
+	cell_editor.setValue(cell_editor_obj.content_before);
+});
+
 cell_editor.getSession().on('change', function() {                                                //automatically update the preview with simplified version (if auto-preview is switched on
   //insert content from ace editor into iframe                                                    
 	if($("#cell_auto_preview_on").hasClass("btn-primary")){                                         
@@ -166,6 +174,21 @@ $("#close_cell_editor").on("click",function(){                                  
 													 this_selection.start.col,                                              
 													 cell_editor.getValue());                                               
 	$("#cell_editor_div").fadeOut();                                                                
-});                                                                                               
+});
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// check every 10 seconds if the cell editor is visible, and if so, update the cell that is being edited with its contents //
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+setInterval(function(){
+  if($("#cell_editor_div").is(":visible")){             // i.e. if someone is editing a cell on one of the spreadsheets
+		this_sheet.setDataAtCell(this_selection.start.row,  // select the cell by row
+														 this_selection.start.col,  // select the cell by column
+														 cell_editor.getValue());   // what you've been editing                                            
+	}
+},10000);                                               // every 10 seconds
+
+
+
 </script>
 <script src="Handsontables/CellEditorKeyboard.js"></script>

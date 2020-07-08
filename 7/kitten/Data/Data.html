@@ -175,7 +175,7 @@ encrypt_obj = {
                   try{
                     var decrypted_private_key = decrypted_private_key_obj.toString(CryptoJS.enc.Utf8);
                   } catch(error) {
-                    custom_alert(error + " trying with an archived private key");
+                    Collector.custom_alert(error + " trying with an archived private key");
                     combine_password_key(keys_list,user_password);
                   }
                   try{
@@ -199,7 +199,7 @@ encrypt_obj = {
                       process_decrypted(all_decrypted,"single");
                     }
                   } catch(error){
-                    custom_alert(error + " trying with an archived private key");
+                    Collector.custom_alert(error + " trying with an archived private key");
                     combine_password_key(keys_list,user_password);
                   }
                 }
@@ -237,7 +237,7 @@ encrypt_obj = {
                   callback: function(result) {
 										if(result){
 											var filename = result.toLowerCase().replace(".csv","") + ".csv";
-											save_csv (filename, Papa.unparse(this_decrypted_message,{
+											Collector.save_data (filename, Papa.unparse(this_decrypted_message,{
 												quotes: false, //or array of booleans
 												quoteChar: '"',
 												escapeChar: '"',

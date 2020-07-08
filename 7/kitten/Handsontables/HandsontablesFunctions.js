@@ -125,77 +125,58 @@ function createHoT(container, data,sheet_name) {
 
 			//identify if repetition has occurred and adjusting value
 			var topRow=[];
-			for (var k=0; k<this.countCols()-1; k++){
-				var cellValue=this.getDataAtCell(0,k);
-				topRow[k]=this.getDataAtCell(0,k);
-				for (l=0; l<k; l++){
-					if (this.getDataAtCell(0,k)==this.getDataAtCell(0,l)){
-						this.setDataAtCell(0,k,this.getDataAtCell(0,k)+'*');
+			for (var k=0; k<this.countCols()-1; k++){																										// loop through columns (for identical headers)
+				var cellValue = this.getDataAtCell(0,k);																								  // store the current column header
+				topRow[k] = this.getDataAtCell(0,k);																											// add the current column header to topRow array
+				for (l=0; l<k; l++){																																			// loop through all the columns before the current one
+					if (this.getDataAtCell(0,k)==this.getDataAtCell(0,l)){																	// if another column has the same header:
+						if(this.isEmptyCol(k)){																																// check if it's a blank column
+							this.alter("remove_col",k);                                                         // delete the column
+						}	else {                                                                              // otherwise we assume it's matching a previous header
+							this.setDataAtCell(0,k,this.getDataAtCell(0,k)+'*');                                // add a star to the title to avoid identical titles
+							bootbox.alert("You have identical headers for two columns '" + 											// let the user know the change has happened
+														this.getDataAtCell(0,k) + "', we have added a * to address this");    
+						}
 					}
 				}
 			}
-			for (var k=0; k<this.countCols()-1; k++){
-				//checking for invalid item number (1)
-				if(this.getDataAtCell(0,k).toLowerCase()=="item"){
-					for(m=0;m<this.countRows();m++){
-						if(this.getDataAtCell(m,k)==1){
-							bootbox.alert("Warning v1: 1 does not refer to any row in the Stimuli sheet! The first row is row 2 (as row 1 is the header). Fix row "+(m+1)+" in your Procedure's Item column.");
+			for (var k=0; k<this.countCols()-1; k++){																										// go through each column
+				if(k >= this.countCols()){  																											        // if the loop has gone past the last column
+					break;                                                                                  // then stop looping through the columns
+				}
+				
+				if(this.getDataAtCell(0,k).toLowerCase()=="item"){      																	// checking for invalid item number (i.e. one)
+					for(m = 0; m < this.countRows(); m++){                																	// loop through each row
+						if(this.getDataAtCell(m,k) == 1){                																			// if the value in the row is one
+							bootbox.alert("Warning v1: 1 does not refer to any row in the Stimuli sheet!" +     // warn the user 
+														"The first row is row 2 (as row 1 is the header). Fix row " + (m+1) +  
+														"in your Procedure's Item column.");                                   
 						}
-						if(this.getDataAtCell(m,k) !== null){
-							if(this.getDataAtCell(m,k).indexOf(":") !== -1){
-								this.setDataAtCell(m,k,this.getDataAtCell(m,k).replace(":"," to "));
+						if(this.getDataAtCell(m,k) !== null){                                                 // if the value is something
+							if(this.getDataAtCell(m,k).indexOf(":") !== -1){																		// check if the user is using a ":" (deprecated)
+								this.setDataAtCell(m,k,this.getDataAtCell(m,k).replace(":"," to "));              // and then replace the colon with " to "
 							}
-						}
-						/*
-						if(this.getDataAtCell(m,k).indexOf(":") !== -1){
-							
-							
-							// replace ":" with " to " but take care of spacing
-							this.setDataAtCell(m,k,this.getDataAtCell(m,k).replace(":"," to "));
-							
-							
-							
-						}
-						*/
+						}						
 					}
 				}
 				
-				//Removing Empty middle columns
-				if (this.isEmptyCol(k)){
-					if (middleColEmpty==0){
-						middleColEmpty=1;
-					}
-				}            
-				if (!this.isEmptyCol(k) & middleColEmpty==1){
-					postEmptyCol = 1;
-					this.alter("remove_col",k-1); //delete column that is empty 
-					middleColEmpty=0;
-				}            
+				if(this.isEmptyCol(k)){																																		// if this is an empty middle column
+					this.alter("remove_col",k);																															// remove this empty middle column
+					k--;																																										// and then check this column number again
+				}				
 			}
-							
-			//Same thing for rows
-			for (var k=0; k<this.countRows()-1; k++){
-				if (this.isEmptyRow(k)){
-					if (middleRowEmpty==0){
-						middleRowEmpty=1;
-					}
-				}            
-				if (!this.isEmptyRow(k) & middleRowEmpty==1){
-					postEmptyRow =1;
-					this.alter("remove_row",k-1); //delete column that is empty
-					middleRowEmpty=0;
-				}            
-			}        
-			if(postEmptyCol != 1 ){
-				while(this.countEmptyCols()>1){  
-					this.alter("remove_col",this.countCols); //delete the last col
+			
+			for (var k=0; k<this.countRows()-1; k++){																										// go through each row
+				
+				if(k >= this.countRows()){  																											        // if the loop has gone past the last row
+					break;                                                                                  // then stop looping through the rows
 				}
-			}
-			if(postEmptyRow != 1){
-				while(this.countEmptyRows()>1){  
-					this.alter("remove_row",this.countRows);//delete the last row
-				}
-			}
+			
+				if (this.isEmptyRow(k)){																																	// if the row is empty
+					this.alter("remove_row",k); 																													  // delete this empty row
+					k--;																																										// and then check this row number again.
+				}            
+			}			
 
 			var experiment = $("#experiment_list").val();
 			var this_exp   = master_json.exp_mgmt.experiments[experiment];
@@ -284,6 +265,9 @@ function createHoT(container, data,sheet_name) {
 					this_sheet = this;
 					$('#cell_editor_div').fadeIn();
 					this_selection = selection;
+					
+					cell_editor_obj.content_before = this_sheet.getDataAtCell(selection.start.row, 
+																																		selection.start.col);
 
 					cell_editor.setValue(this_sheet.getDataAtCell(selection.start.row, 
 																												selection.start.col),-1);
@@ -312,12 +296,12 @@ function createHoT(container, data,sheet_name) {
 			"---------": {
         name: '---------'
       },
-			"row_below": {
-        name: 'Insert row below'
-      },			
 			"row_above": {
         name: 'Insert row above'
       },
+			"row_below": {
+        name: 'Insert row below'
+      },			
 			"col_left": {
         name: 'Insert column left'
       },

@@ -38,7 +38,7 @@ $("#delete_exp_btn").on("click",function(){
 							if(document.getElementById('experiment_list').options[0] !== undefined){
 								$("#experiment_list").val(document.getElementById('experiment_list').options[0].value);
 							}
-							custom_alert(exp_name +" succesfully deleted");
+							Collector.custom_alert(exp_name +" succesfully deleted");
 							update_master_json();
 							$("#save_btn").click();
 							update_handsontables();
@@ -49,12 +49,12 @@ $("#delete_exp_btn").on("click",function(){
 				} else {
 					$('#experiment_list option:contains('+ exp_name +')')[0].remove();
 					$("#experiment_list").val(document.getElementById('experiment_list').options[0].value);
-					custom_alert(exp_name +" succesfully deleted");
+					Collector.custom_alert(exp_name +" succesfully deleted");
 					update_master_json();
 					update_handsontables();
 
 					//delete the local file if this is
-					if(dev_obj.context == "localhost"){
+					if(Collector.detect_context() == "localhost"){
 						eel.delete_exp(exp_name);
 					}
 				}
@@ -142,7 +142,7 @@ $("#rename_exp_btn").on("click",function(){
       master_json.exp_mgmt.experiments[new_name] = master_json.exp_mgmt.experiments[original_name];
       delete(master_json.exp_mgmt.experiments[original_name]);
 
-      switch(dev_obj.context){
+      switch(Collector.detect_context()){
         case "localhost":
           eel.save_experiment(new_name,master_json.exp_mgmt.experiments[new_name]);
           eel.delete_exp(original_name);
@@ -164,8 +164,6 @@ $("#rename_exp_btn").on("click",function(){
           });
       }
 		}
-		//confirm that there isn't another experiment with that name
-
 	});
 });
 $("#rename_proc_button").on("click",function(){
@@ -235,7 +233,7 @@ $("#run_btn").on("click",function(){
 	var exp_json = master_json.exp_mgmt.experiments[experiment];
 	var select_html = '<select id="select_condition" class="custom-select">';
 	if(typeof(exp_json.conditions) == "undefined"){
-		exp_json.conditions = collectorPapaParsed(exp_json.cond_array);
+		exp_json.conditions = Collector.PapaParsed(exp_json.cond_array);
 		exp_json.conditions = exp_json.conditions.filter(function(condition){
 			return condition.name !== "";
 		});
@@ -248,7 +246,7 @@ $("#run_btn").on("click",function(){
   
 
   
-	switch(dev_obj.context){
+	switch(Collector.detect_context()){
 		case "github":
 		case "server":
 		bootbox.dialog({
@@ -261,8 +259,8 @@ $("#run_btn").on("click",function(){
 						callback: function(){
 							master_json.exp_mgmt.exp_condition = $("#select_condition").val();
 
-							var this_url = window.location.href.split("/" + dev_obj.version)[0] + 
-																												"/" + dev_obj.version + "/";
+							var this_url = window.location.href.split("/" + Collector.version)[0] + 
+																												"/" + Collector.version + "/";
 
 							window.open(this_url  	+ "RunStudy.html?platform=github&" +
 													"location=" + $("#experiment_list").val() + "&" +
@@ -276,8 +274,8 @@ $("#run_btn").on("click",function(){
 						callback: function(){
 							master_json.exp_mgmt.exp_condition = $("#select_condition").val();
 
-							var this_url = window.location.href.split("/" + dev_obj.version)[0] + 
-																												"/" + dev_obj.version + "/";
+							var this_url = window.location.href.split("/" + Collector.version)[0] + 
+																												"/" + Collector.version + "/";
 																"/";
 							window.open(this_url  	+ "RunStudy.html?platform=preview&" +
 													"location=" + $("#experiment_list").val() + "&" +
@@ -361,7 +359,7 @@ $("#run_btn").on("click",function(){
 																		".github.io/" +
 																		master_json.github.repository +
 																		"/web/" +
-																		dev_obj.version +
+																		Collector.version +
 																		"/";
 
 									window.open(github_url  + "RunStudy.html?platform=github&" +
@@ -441,19 +439,19 @@ $("#save_btn").on("click", function(){
             }
             this_exp.surveys[this_survey] = master_json.surveys.user_surveys[this_survey];
 
-            //check for boosts
-            if(typeof(this_exp.boosts) == "undefined"){
-              this_exp.boosts = {};
+            //check for mods
+            if(typeof(this_exp.mods) == "undefined"){
+              this_exp.mods = {};
             }
             keyed_survey = Papa.parse(Papa.unparse(master_json.surveys.user_surveys[this_survey]),{header:true}).data;
             keyed_survey.forEach(function(key_row){
               clean_key_row = Collector.clean_obj_keys(key_row);
               if(typeof(clean_key_row.type) !== "undefined"){
-                var survey_boost_type = clean_key_row.type.toLowerCase();
-                if(typeof(master_json.boosts[survey_boost_type]) !== "undefined"){
-                  this_exp.boosts[survey_boost_type] = {
+                var survey_mod_type = clean_key_row.type.toLowerCase();
+                if(typeof(master_json.mods[survey_mod_type]) !== "undefined"){
+                  this_exp.mods[survey_mod_type] = {
                     location:'',
-                    contents:master_json.boosts[survey_boost_type].contents
+                    contents:master_json.mods[survey_mod_type].contents
                   }
                 }
               }
@@ -496,13 +494,13 @@ $("#save_btn").on("click", function(){
 					} else {
 						bootbox.alert("The trialtype <b>" + cleaned_row["trial type"] + "</b> doesn't appear to exist");
 					}
-					these_variables = list_variables(this_trialtype);
+					these_variables = Collector.list_variables(this_trialtype);
 
 					these_variables.forEach(function(this_variable){
 						if(Object.keys(cleaned_row).indexOf(this_variable) == -1 &&
                this_variable !== "survey" &&
                cleaned_row["trial type"] !== "survey"){          //i.e. this variable is not part of this procedure
-							custom_alert("You have your item set to <b>0</b> in row <b>" +
+							Collector.custom_alert("You have your item set to <b>0</b> in row <b>" +
 														(row_index + 2) +
 														"</b>. However, it seems like the trialtype <b>" +
 														cleaned_row["trial type"] +
@@ -535,7 +533,7 @@ $("#save_btn").on("click", function(){
       }
     });
 
-    if(dev_obj.context == "localhost"){
+    if(Collector.detect_context() == "localhost"){
       python_exp = this_exp;
       python_exp.python_procs = {};
       python_exp.python_conditions = Papa.unparse(this_exp.cond_array);
@@ -562,7 +560,7 @@ $("#save_btn").on("click", function(){
 									$("#run_link").attr("href","../"+ master_json.exp_mgmt.version + "/RunStudy.html?location="+this_exp.location);
 									update_master_json();
 								},function(error){
-									custom_alert("check console for error saving location");
+									Collector.custom_alert("check console for error saving location");
 									bootbox.alert(error.error + "<br> Perhaps wait a bit and save again?");;
 								},
 								"filesUpload");              
@@ -579,7 +577,7 @@ $("#save_btn").on("click", function(){
   } else {
     update_master_json();
   }
-  if(dev_obj.context == "localhost"){
+  if(Collector.detect_context() == "localhost"){
     eel.save_master_json(master_json);
   }
 });

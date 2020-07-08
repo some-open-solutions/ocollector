@@ -3,6 +3,10 @@
 		"subtitle":"Answers the participant can choose",
 		"text":"A single answer or list of answers the participant can choose. Put a pipe character ( | ) between each possible answer. If you're having problems finding the pipe key, you can highlight the pipe in the brackets and then copy and paste it."
 	},
+	"btn_width":{
+		"subtitle": "How wide each button will be (likert scale)",
+		"text": "This is for likert questions only - you can set it so that each button has the same width as each other by setting a specific width (e.g. 200px)"
+	},
   "feedback":{
     "subtitle":"Tell the participant about each answer",
     "text": "You can list what feedback you associate with each response. Put a pipe | between each feedback"
@@ -27,6 +31,14 @@
 		"subtitle":"randomise order of items",
 		"text": "In this column, if you want to randomise the order of questions, you can either simply write <b>'on'</b> in the items you want randomised, or you can use a different words for different groups of items you want randomised together. For example, if you wanted the first and second half of your items shuffled, you could write 'first' in the shuffle column for each of the first half of the items, and 'second' for each of the second half of the items. The order of items is preserved otherwise, so any items without a word in the shuffle column will not be shuffled. If you write 'off' in this column, the item will <b>not</b> be shuffled."
 	},
+  "side_by_side":{
+    "subtitle": "likert only",
+    "text": "By default, this is set to 'no', and your question will be in a row above the response buttons. However, if you set this to 'yes', then the responses will be presented in the same row as the question. The default survey autism quotient is an example of how it looks by default, but the info sheet has an example of what 'yes' looks like."
+  },
+	"side_text":{
+		"subtitle":"text on either end of a likert scale",
+		"text": "What does each extreme of the likert scale mean? For example, a scale of 1 to 5 might range from 'strongly disagree' to 'strongly agree'. In this case, you would write 'strongly disagree|strongly agree'"
+	},
 	"text":{
 		"subtitle":"Question text",
 		"text":"This will be presented on the left side of the survey. This is useful if you have a question with responses for this item. If you want to have no text for this row of the survey, create a column <b>no_text</b> in your sheet, and turn it on. If you want the text to take up the whole row, then under the <b>type</b> header, choose 'instruct'"
@@ -41,6 +53,7 @@
 		"number": "Only allows participants to type in a number. ",
 		"para": "Gives the participant a large text box to write in their answer. ",
 		"radio": "Allows the participant to only select one option in a list (unlike checkboxes).",
+		"select":"A standard dropdown list. ",
 		"shortAnswer": "Gives participant space for a small paragraph for their response. ",
 		"slider": "The participant can slide between values you specify. ",
 		"text": "Gives the participant a text box to write in their answer."

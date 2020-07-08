@@ -42,7 +42,7 @@
 <link rel="stylesheet" href="../libraries/bootstrapCollector.css">
 <script src="../libraries/bootstrap.4.0.min.js"></script>
 
-<script src="Code/initiateCollector.js"></script>
+<script src="Code/Collector.js"></script>
 <script src="Code/OnlineTriggers.js"></script>
 <script src="Code/CollectorEncrypt.js"></script>
 <script src="Code/BrowserCheck.js"></script>
@@ -141,15 +141,11 @@ online_data_obj = {
   }
 }
 
-//////////////
-// Pipeline //
-//////////////
-
 Study = {
-  ////////////////////////////
-  // Pipeline functionality //
-  ////////////////////////////
 
+  /*
+	* Pipeline
+	*/
   get_vars        : {},
   resume          : false,
   pipeline        : ["get_gets",
@@ -185,13 +181,10 @@ Study = {
     }
   },
 
-  /////////////////////
-  // Trial functions //
-  /////////////////////
+  /*
+  * Trial functions 
+  */
   finish_trial: function(go_to_info){
-    
-    
-    
 
     trial_end_ms = (new Date()).getTime();
     trial_inputs = {};
@@ -350,7 +343,20 @@ Study = {
 			}
 			this_trialtype = this_trialtype.replaceAll("{{" + variable + "}}", variable_val);
 		});
-    this_trialtype = this_trialtype.replaceAll("www.dropbox","dl.dropbox"); // in case user forgets
+    this_trialtype = this_trialtype.replaceAll("www.dropbox","dl.dropbox"); // in case the user forgets
+    
+    /*
+    * add the random seed to each dropbox img, vid or audio file here 
+    */
+    var dl0_to_replace = (this_trialtype.match(/dl=0/g) || []).length;
+    for (var i = 0; i < dl0_to_replace; i++){
+      this_trialtype = this_trialtype.replace("?dl=0","?dl=0&someRandomSeed=" + Math.random().toString(36));
+    }
+    
+    var dl1_to_replace = (this_trialtype.match(/dl=1/g) || []).length;
+    for (var i = 0; i < dl1_to_replace; i++){
+      this_trialtype = this_trialtype.replace("?dl=1","?dl=1&someRandomSeed=" + Math.random().toString(36));
+    }
 		return this_trialtype;
 	},
   
@@ -656,11 +662,17 @@ function full_screen(){
   if(typeof(exp_json.this_condition.fullscreen) !== "undefined"){
     if(exp_json.this_condition.fullscreen == "on"){
       var elem = $(document.body);
-      bootbox.confirm("The researcher would like to run this in full screen, are you okay with that?",function(response){
-        if(response){
-          requestFullScreen(document.documentElement);
-        }
-      });
+      
+      if((window.fullScreen) ||
+         (window.innerWidth == screen.width && window.innerHeight == screen.height)) {
+        // don't need to ask
+      } else {
+        bootbox.confirm("The researcher would like to run this in full screen, are you okay with that?",function(response){
+          if(response){
+            requestFullScreen(document.documentElement);
+          }
+        });
+      }
     }
   }
   Study.activate_pipe();
@@ -785,15 +797,15 @@ function parse_sheets(){
     case "preview":
     case "github":
       if(typeof(Study.get_vars.dropbox) !== "undefined" && Study.get_vars.dropbox){
-        exp_json.parsed_proc = collectorPapaParsed(exp_json.all_procs[proc_sheet_name]);
-        exp_json.parsed_stim = [null,null].concat(collectorPapaParsed(exp_json.all_stims[stim_sheet_name]));
+        exp_json.parsed_proc = Collector.PapaParsed(exp_json.all_procs[proc_sheet_name]);
+        exp_json.parsed_stim = [null,null].concat(Collector.PapaParsed(exp_json.all_stims[stim_sheet_name]));
         Study.activate_pipe();
       } else {
         var proc_url = "../User/Experiments/" +
                        Study.get_vars.location +
                        "/" + proc_sheet_name;
         $.get(proc_url,function(proc_sheet_content){
-          exp_json.parsed_proc = collectorPapaParsed(proc_sheet_content);
+          exp_json.parsed_proc = Collector.PapaParsed(proc_sheet_content);
           proc_stim_loaded[1] = "procedure";
           if(proc_stim_loaded.join("-") == "stimuli-procedure"){
             Study.activate_pipe();
@@ -803,7 +815,7 @@ function parse_sheets(){
                        Study.get_vars.location +
                        "/" +  stim_sheet_name;
         $.get(stim_url,function(stim_sheet_content){
-          exp_json.parsed_stim = [null,null].concat(collectorPapaParsed(stim_sheet_content));
+          exp_json.parsed_stim = [null,null].concat(Collector.PapaParsed(stim_sheet_content));
           proc_stim_loaded[0] = "stimuli";
           if(proc_stim_loaded.join("-") == "stimuli-procedure"){
             Study.activate_pipe();
@@ -815,11 +827,11 @@ function parse_sheets(){
       break;
     case "server":
       proc_stim_loaded[1] = "procedure";
-      exp_json.parsed_proc = collectorPapaParsed(exp_json.all_procs[proc_sheet_name]);
+      exp_json.parsed_proc = Collector.PapaParsed(exp_json.all_procs[proc_sheet_name]);
       if(proc_stim_loaded.join("-") == "stimuli-procedure"){
         Study.activate_pipe();
       }
-      exp_json.parsed_stim = [null,null].concat(collectorPapaParsed(exp_json.all_stims[stim_sheet_name]));
+      exp_json.parsed_stim = [null,null].concat(Collector.PapaParsed(exp_json.all_stims[stim_sheet_name]));
       proc_stim_loaded[0] = "stimuli";
       if(proc_stim_loaded.join("-") == "stimuli-procedure"){
         Study.activate_pipe();
@@ -1072,7 +1084,7 @@ function requestFullScreen(element) {
 }
 
 function select_condition(){
-	exp_json.conditions = collectorPapaParsed(exp_json.cond_array);
+	exp_json.conditions = Collector.PapaParsed(exp_json.cond_array);
 
   exp_json.this_condition = exp_json.conditions.filter(function(row){
     return row.name == Study.get_vars.name;

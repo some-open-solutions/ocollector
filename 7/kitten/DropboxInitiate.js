@@ -44,8 +44,8 @@ function dropbox_login(message){
     var message = "You need to be logged in to dropbox to access your experiments";
   }
   var dbx = new Dropbox({ clientId: CLIENT_ID });
-  if(dev_obj.context == "server" |
-     dev_obj.context == "github"){
+  if(Collector.detect_context() == "server" |
+     Collector.detect_context() == "github"){
     // var local_website = document.URL can delete?
 
     var authUrl = dbx.getAuthenticationUrl(document.URL);
@@ -76,7 +76,7 @@ function getAccessTokenFromUrl() { // Parses the url and gets the access token i
  return utils.parseQueryString(window.location.hash).access_token;
 }
 function isAuthenticated() { // If the user was just redirected from authenticating, the urls hash will contain the access token.
-  return !!getAccessTokenFromUrl() | dev_obj.context == "gitpod";
+  return !!getAccessTokenFromUrl() | Collector.detect_context() == "gitpod";
 }
 
 
@@ -106,7 +106,7 @@ function check_authenticated(){
     });
   // Create an instance of Dropbox with the access token and use it to
     // fetch and render the files in the users root directory.
-    if(dev_obj.context == "gitpod"){
+    if(Collector.detect_context() == "gitpod"){
       if(typeof(dbx) == "undefined"){
         dbx = new Dropbox({ accessToken: "zX0EGDhNy2AAAAAAAAAAIW8Ew9QBdD0LofB7depK5AB5fUK9_18t5qQWVeV2VGZs" }); //this may require frequent updating :-(
       }
@@ -243,10 +243,10 @@ function load_master_json(link_created){
 		$("#startup_btn").on("click",function(){
 			startup_dialog.modal("hide");
 		});
-		// add boosts if not already present
+		// add mods if not already present
 		//////////////////////////////////////
-		if(typeof(master_json.boosts) == "undefined"){
-			master_json.boosts = {};
+		if(typeof(master_json.mods) == "undefined"){
+			master_json.mods = {};
 		}
 		renderItems();
 		dbx.filesListFolder({path: '/experiments'})
@@ -269,7 +269,7 @@ function new_dropbox_account(dropbox_dialog){
     console.dir(this_json);
     master_json = this_json;
     //create more general dropbox update function that queues any dropbox request?
-    var these_folders = ["boosts",
+    var these_folders = ["mods",
                          "experiments",
                          "stimuli",
                          "surveys",
@@ -308,4 +308,3 @@ function new_dropbox_account(dropbox_dialog){
     });
   });
 }
-

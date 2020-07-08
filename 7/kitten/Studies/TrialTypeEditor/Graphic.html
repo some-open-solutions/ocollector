@@ -35,7 +35,7 @@
 .setting_header{
 	cursor: pointer;
 }
-.trial_boost{
+.trial_mod{
 	width:100%;
 }
 #element_name{
@@ -116,11 +116,11 @@
 							<label class="custom-control-label text-primary" for="keyboard_end_press">End Trial on key press</label>
 						</div>
 					</div>
-					<h3 class="text-primary"> Boosts </h3>
-					<div id="current_boosts"></div>
-					<div id="boost_settings"></div>
+					<h3 class="text-primary"> mods </h3>
+					<div id="current_mods"></div>
+					<div id="mod_settings"></div>
 
-					<button class="btn btn-outline-primary" style = "width:100%" id="add_boost_btn">Add boost</button>
+					<button class="btn btn-outline-primary" style = "width:100%" id="add_mod_btn">Add mod</button>
 				</div>
 				<div id="graphic_settings"></div>
 			</div>
@@ -187,43 +187,43 @@ $(".keyboard_setting").on("input change",function(){ //only for valid keys at th
 // by element
 /////////////
 
-$("#add_boost_btn").on("click",function(){
-	bootbox.prompt("What would you like to call this boost?",function(boost){
-	  // add boost to the trialtype in graphic part
+$("#add_mod_btn").on("click",function(){
+	bootbox.prompt("What would you like to call this mod?",function(mod){
+	  // add mod to the trialtype in graphic part
 		var trialtype = master_json.trialtypes.trialtype;
 		var this_trialtype = master_json.trialtypes.graphic.trialtypes[trialtype];
-    if(typeof(this_trialtype.boosts) == "undefined"){
-			this_trialtype.boosts = {};
+    if(typeof(this_trialtype.mods) == "undefined"){
+			this_trialtype.mods = {};
 		}
-    if(typeof(this_trialtype.boosts[boost]) !== "undefined"){
+    if(typeof(this_trialtype.mods[mod]) !== "undefined"){
 
-      bootbox.alert("The name <b>" + boost + "</b> already exists. Please come up with a unique name for this boost.");
+      bootbox.alert("The name <b>" + mod + "</b> already exists. Please come up with a unique name for this mod.");
 
     } else {
-      this_trialtype.boosts[boost] = {
+      this_trialtype.mods[mod] = {
         type:"",
         settings:{}
       }
-      var index = $("#trial_boost_settings").find(".setting_header").length;
-      new_card_html = '<div class="card-header bg-primary setting_header" id="boost' + index + '" data-toggle="collapse" data-target="#collapse_boost_' + index + '" aria-expanded="true" aria-controls="collapse_boost_' + index + '">' +
-            '<h4 class="mb-0 text-white">' + boost + '</h4>' +
+      var index = $("#trial_mod_settings").find(".setting_header").length;
+      new_card_html = '<div class="card-header bg-primary setting_header" id="mod' + index + '" data-toggle="collapse" data-target="#collapse_mod_' + index + '" aria-expanded="true" aria-controls="collapse_mod_' + index + '">' +
+            '<h4 class="mb-0 text-white">' + mod + '</h4>' +
           '</div>' +
-          '<div id="collapse_boost_' + index + '" class="collapse show" aria-labelledby="boost' + index + '" data-parent="#trial_boost_settings">'+
+          '<div id="collapse_mod_' + index + '" class="collapse show" aria-labelledby="mod' + index + '" data-parent="#trial_mod_settings">'+
             '<div class="card-body">' +
-              '<select class="form-control select_boost" id="boost_select_' + boost + '">' +
-                '<option>--select boost--</option>';
-      Object.keys(master_json.boosts).forEach(function(boost_type){
+              '<select class="form-control select_mod" id="mod_select_' + mod + '">' +
+                '<option>--select mod--</option>';
+      Object.keys(master_json.mods).forEach(function(mod_type){
         new_card_html +=
-                '<option title="' + boost + '">' + boost_type + '</option>';
+                '<option title="' + mod + '">' + mod_type + '</option>';
       });
       new_card_html +=
               '</select>' +
             '</div>' +
           '</div>';
-      $("#trial_boost_settings").append(new_card_html);
+      $("#trial_mod_settings").append(new_card_html);
 
-      $(".select_boost").off();
-      select_boost_on();
+      $(".select_mod").off();
+      select_mod_on();
     }
 	});
 
@@ -341,88 +341,88 @@ $("#trial_width").on("input change",function(){
 	graphic_editor_obj.compile_graphics();
 });
 
-// boost
+// mod
 ////////
 
-function load_trialtype_boosts(){
-	// deal with list of boosts here - can be an array in graphics and then this array when compiled adds the boosts at the bottom of the script
+function load_trialtype_mods(){
+	// deal with list of mods here - can be an array in graphics and then this array when compiled adds the mods at the bottom of the script
 	var trialtype 		 = master_json.trialtypes.trialtype;
 	var this_trialtype = master_json.trialtypes.graphic.trialtypes[trialtype];
-	if(typeof(this_trialtype.boosts) == "undefined"){
-		this_trialtype.boosts = {};
+	if(typeof(this_trialtype.mods) == "undefined"){
+		this_trialtype.mods = {};
 	}
-	//if boosts exist, list them
-	$("#boost_div").html('');
-	current_boosts_html = '<div class="accordion" id="trial_boost_settings">';
+	//if mods exist, list them
+	$("#mod_div").html('');
+	current_mods_html = '<div class="accordion" id="trial_mod_settings">';
 
-	Object.keys(this_trialtype.boosts).forEach(function(boost,index){
-		current_boosts_html +=
+	Object.keys(this_trialtype.mods).forEach(function(mod,index){
+		current_mods_html +=
 			'<div class="card">' +
-				'<div class="card-header bg-primary setting_header" id="boost' + index + '" data-toggle="collapse" data-target="#collapse_boost_' + index + '" aria-expanded="true" aria-controls="collapse_boost_' + index + '">' +
-					'<h4 class="mb-0 text-white">' + boost + '</h4>' +
+				'<div class="card-header bg-primary setting_header" id="mod' + index + '" data-toggle="collapse" data-target="#collapse_mod_' + index + '" aria-expanded="true" aria-controls="collapse_mod_' + index + '">' +
+					'<h4 class="mb-0 text-white">' + mod + '</h4>' +
 				'</div>' +
-				'<div id="collapse_boost_' + index + '" class="collapse show" aria-labelledby="boost' + index + '" data-parent="#trial_boost_settings">'+
+				'<div id="collapse_mod_' + index + '" class="collapse show" aria-labelledby="mod' + index + '" data-parent="#trial_mod_settings">'+
 					'<div class="card-body">' +
-            '<button class="btn btn-primary delete_boost" value="' + boost + '">Delete</button>';
+            '<button class="btn btn-primary delete_mod" value="' + mod + '">Delete</button>';
 
-		boost_settings = Object.keys(this_trialtype.boosts[boost].settings);
-		boost_settings.forEach(function(boost_setting){
+		mod_settings = Object.keys(this_trialtype.mods[mod].settings);
+		mod_settings.forEach(function(mod_setting){
 
-			if(typeof(this_trialtype.boosts[boost].settings[boost_setting]) !== "undefined"){
-				var this_boost_value = this_trialtype.boosts[boost].settings[boost_setting];
+			if(typeof(this_trialtype.mods[mod].settings[mod_setting]) !== "undefined"){
+				var this_mod_value = this_trialtype.mods[mod].settings[mod_setting];
 			} else {
-				var this_boost_value = "";
+				var this_mod_value = "";
 			}
-      current_boosts_html += "<select class='form-control select_boost' id='boost_select_" + boost + "'>";
-      current_boosts_html += "  <option>--select boost--</option>";
-    Object.keys(master_json.boosts).forEach(function(boost_type){
-      var selected = boost_type == this_trialtype.boosts[boost].type ? "selected" : "";
-      current_boosts_html += "  <option " + selected + " title='" + boost + "'>" + boost_type + "</option>";
+      current_mods_html += "<select class='form-control select_mod' id='mod_select_" + mod + "'>";
+      current_mods_html += "  <option>--select mod--</option>";
+    Object.keys(master_json.mods).forEach(function(mod_type){
+      var selected = mod_type == this_trialtype.mods[mod].type ? "selected" : "";
+      current_mods_html += "  <option " + selected + " title='" + mod + "'>" + mod_type + "</option>";
     });
-      current_boosts_html += "</select>";
-			current_boosts_html +=
+      current_mods_html += "</select>";
+			current_mods_html +=
 						'<div class="input-group mb-3">' +
 							'<div class="input-group-prepend">' +
-								'<span class="input-group-text" >'+ boost_setting +'</span>' +
+								'<span class="input-group-text" >'+ mod_setting +'</span>' +
 							'</div>' +
-							'<input class="form-control boost_setting" id="boost_setting_' + boost + "_|_" + boost_setting + '" value="' + this_boost_value + '">' +
+							'<input class="form-control mod_setting" id="mod_setting_' + mod + "_|_" + mod_setting + '" value="' + this_mod_value + '">' +
 						'</div>';
 		});
-		current_boosts_html +=
+		current_mods_html +=
 					"</div>" +
 				"</div>" +
 			"</div>";
 	});
-	$("#current_boosts").html(current_boosts_html);
-  $(".boost_setting").off();
-	$(".boost_setting").on("change input",function(){
-    var boost_setting = this.id.replace("boost_setting_","").split("_|_");
-    var boost 				= boost_setting[0];
-    var setting 			= boost_setting[1];
-    this_trialtype.boosts[boost].settings[setting] = this.value;
+	$("#current_mods").html(current_mods_html);
+  $(".mod_setting").off();
+	$(".mod_setting").on("change input",function(){
+    var mod_setting = this.id.replace("mod_setting_","").split("_|_");
+    var mod 				= mod_setting[0];
+    var setting 			= mod_setting[1];
+    this_trialtype.mods[mod].settings[setting] = this.value;
 		graphic_editor_obj.compile_graphics();
 	});
-  select_boost_on();
+  select_mod_on();
 }
-function select_boost_on(){
-  $(".delete_boost").on("click",function(){
-    var boost = this.value;
-    bootbox.confirm("Are you sure you want to delete the boost <b>" + this.value + "</b> for this trialtype?",function(response){
+function select_mod_on(){
+  $(".delete_mod").on("click",function(){
+    var mod = this.value;
+    bootbox.confirm("Are you sure you want to delete the mod <b>" + this.value + "</b> for this trialtype?",function(response){
       if(response){
         var trialtype      = master_json.trialtypes.trialtype;
         var this_trialtype = master_json.trialtypes.graphic.trialtypes[trialtype];
-        delete(this_trialtype.boosts[boost]);
-        load_trialtype_boosts();
+        delete(this_trialtype.mods[mod]);
+        load_trialtype_mods();
         update_master_json();
       }
     });
   });
-  $(".select_boost").on("change",function(){
+  $(".select_mod").on("change",function(){
 
-    var boost_html = master_json.boosts[$(this).val()];
+    var mod_html = master_json.mods[$(this).val()];
     var variables = [];
 
-    split_trialtype = boost_html.split("{{");
+    split_trialtype = mod_html.split("{{");
     split_trialtype = split_trialtype.map(function(split_part){
       if(split_part.indexOf("}}") !== -1){
         more_split_part = split_part.split("}}");
@@ -432,41 +432,41 @@ function select_boost_on(){
       }
       return split_part;
     });
-    boost_html = split_trialtype.join("{{");
+    mod_html = split_trialtype.join("{{");
 
-    boost_variables = variables.filter(variable => variable.indexOf("boost.") == 0);
-    boost_variables = boost_variables.map(boost_variable => boost_variable.replace("boost.",""));
-    boost_settings_html = '';
+    mod_variables = variables.filter(variable => variable.indexOf("mod.") == 0);
+    mod_variables = mod_variables.map(mod_variable => mod_variable.replace("mod.",""));
+    mod_settings_html = '';
 
     var trialtype 		 = master_json.trialtypes.trialtype;
     var this_trialtype = master_json.trialtypes.graphic.trialtypes[trialtype];
 
-    var boost = this.id.replace("boost_select_","");
+    var mod = this.id.replace("mod_select_","");
 
-    this_trialtype.boosts[boost].type = $(this).val();
-    boost_variables.forEach(function(boost_variable){
+    this_trialtype.mods[mod].type = $(this).val();
+    mod_variables.forEach(function(mod_variable){
 
-      if(typeof(this_trialtype.boosts[boost].settings[boost_variable]) !== "undefined"){
-        var this_boost_value = this_trialtype.boosts[boost].settings[boost_variable];
+      if(typeof(this_trialtype.mods[mod].settings[mod_variable]) !== "undefined"){
+        var this_mod_value = this_trialtype.mods[mod].settings[mod_variable];
       } else {
-        var this_boost_value = "";
+        var this_mod_value = "";
       }
 
-      boost_settings_html +=
+      mod_settings_html +=
         '<div class="input-group mb-3">' +
           '<div class="input-group-prepend">' +
-            '<span class="input-group-text" >'+ boost_variable +'</span>' +
+            '<span class="input-group-text" >'+ mod_variable +'</span>' +
           '</div>' +
-          '<input class="form-control boost_setting" id="boost_setting_' + boost + "_|_" + boost_variable + '" value="' + this_boost_value + '">' +
+          '<input class="form-control mod_setting" id="mod_setting_' + mod + "_|_" + mod_variable + '" value="' + this_mod_value + '">' +
         '</div>';
     });
-    $("#boost_settings").html(boost_settings_html);
-    $(".boost_setting").off();
-    $(".boost_setting").on("change input",function(){
-      var boost_setting  = this.id.replace("boost_setting_","").split("_|_");
-      var boost 				 = boost_setting[0];
-      var setting 			 = boost_setting[1];
-      this_trialtype.boosts[boost].settings[setting] = this.value;
+    $("#mod_settings").html(mod_settings_html);
+    $(".mod_setting").off();
+    $(".mod_setting").on("change input",function(){
+      var mod_setting  = this.id.replace("mod_setting_","").split("_|_");
+      var mod 				 = mod_setting[0];
+      var setting 			 = mod_setting[1];
+      this_trialtype.mods[mod].settings[setting] = this.value;
       graphic_editor_obj.compile_graphics();
     });
   });
@@ -782,21 +782,21 @@ graphic_editor_obj = {
     }
 		this_code += "</sc"+"ript>\n";
 
-		// boosts
+		// mods
 		/////////
 
-		//replace boost.variable_names
-    if(typeof(this_trialtype.boosts) !== "undefined"){
-      Object.keys(this_trialtype.boosts).forEach(function(boost){
-        var this_boost = this_trialtype.boosts[boost];
-        var boost_html = master_json.boosts[this_boost.type];
+		//replace mod.variable_names
+    if(typeof(this_trialtype.mods) !== "undefined"){
+      Object.keys(this_trialtype.mods).forEach(function(mod){
+        var this_mod = this_trialtype.mods[mod];
+        var mod_html = master_json.mods[this_mod.type];
 
         //replace each of the variables
-        Object.keys(this_boost.settings).forEach(function(boost_setting){
-          console.dir(boost_setting);
-          boost_html = boost_html.replaceAll("{{boost." + boost_setting + "}}",this_boost.settings[boost_setting]);
+        Object.keys(this_mod.settings).forEach(function(mod_setting){
+          console.dir(mod_setting);
+          mod_html = mod_html.replaceAll("{{mod." + mod_setting + "}}",this_mod.settings[mod_setting]);
         });
-        this_code += boost_html + "\n";
+        this_code += mod_html + "\n";
       });
 		}
 
@@ -1218,7 +1218,7 @@ graphic_editor_obj = {
 		});
 	},
 	graphic_warning:function(){
-		bootbox.alert("For graphic trialtypes you cannot edit the code directly. If you want to insert code into the trialtype, you can do this by either including a <b>boost</b>, or by copying the whole text (select all and then right click with your mouse to copy) into a new trialtype which you create using the <b>code</b> rather than <b>graphic</b> editor.");
+		bootbox.alert("For graphic trialtypes you cannot edit the code directly. If you want to insert code into the trialtype, you can do this by either including a <b>mod</b>, or by copying the whole text (select all and then right click with your mouse to copy) into a new trialtype which you create using the <b>code</b> rather than <b>graphic</b> editor.");
 	},
   load_canvas:function(these_elements){
     graphic_editor_obj.clean_canvas(function(){

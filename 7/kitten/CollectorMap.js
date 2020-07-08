@@ -23,7 +23,8 @@ var isolation_map = {
     DefaultSurveys:{
       'autism_quotient.csv'     : 'file',
       'demographics.csv'        : 'file',
-      'empathy_quotient_40.csv' : 'file'
+      'empathy_quotient_40.csv' : 'file',
+			"info_sheet.csv"					: 'file'
     },
     DefaultTrialtypes:{
       "instruct.html" : "file",
@@ -53,7 +54,6 @@ var isolation_map = {
   },
   Surveys : {
     'Surveys.html'    : 'file',
-    'surveyTypes.csv' : 'file'
   },
   "CollectorMap.js" : "file",
   "jsFunctions.js"  : "file",

@@ -74,7 +74,9 @@ function online_save(experiment_id,
 	}
 	var script_list = [];
 	Object.keys(data_scripts).forEach(function(server){
-		script_list.push(data_scripts[server]);
+    if(server !== "free"){                               // temp fix for invalid script
+      script_list.push(data_scripts[server]);
+    }
 	});
 	until_successful_script(script_list,
 													data,

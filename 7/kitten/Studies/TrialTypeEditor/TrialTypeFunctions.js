@@ -21,6 +21,7 @@ $.ajaxSetup({ cache: false }); // prevents caching, which disrupts $.get calls
 
 trialtypes_obj = {
 	delete_trialtype:function(){
+    var deleted_trialtype = $("#trial_type_select").val();
     master_json.trialtypes.trialtype = $("#trial_type_select").val();
 		var this_loc = "/trialtypes/"+master_json.trialtypes.trialtype;
 		bootbox.confirm("Are you sure you want to delete this "+this_loc+"?",function(result){
@@ -29,18 +30,32 @@ trialtypes_obj = {
 					delete(master_json.trialtypes.graphic.trialtypes[master_json.trialtypes.trialtype]);
 				}
 				delete(master_json.trialtypes.user_trialtypes[master_json.trialtypes.trialtype]);
+        $("#trial_type_select").attr("previousvalue","");
 				$("#trial_type_select  option:selected").remove(); 																	//remove from dropdown list
 				master_json.trialtypes.trialtype = $("#trial_type_select").val();
 				trialtypes_obj.load_trial_file("default_trialtype");
-				custom_alert("Successfully deleted "+this_loc);
+				Collector.custom_alert("Successfully deleted "+this_loc);
 				update_master_json();
-				dbx.filesDelete({path:this_loc+".html"})
-					.then(function(returned_data){
-						//do nothing more
-					})
-					.catch(function(error){
-						report_error("problem deleting a trialtype", "problem deleting a trialtype");
-					});
+				
+				
+				switch(Collector.detect_context()){
+					case "github":																							// i.e. the user is online and using dropbox
+					case "gitpod":					                                    // i.e. the user is online and using dropbox
+					case "server":                                              // i.e. the user is online and using dropbox
+						dbx.filesDelete({path:this_loc+".html"})
+							.then(function(returned_data){
+								//do nothing more
+							})
+							.catch(function(error){
+								report_error("problem deleting a trialtype", 
+														 "problem deleting a trialtype");
+							});
+						break;
+					case "localhost":																						// i.e. they can edit local files
+            eel.delete_trialtype(deleted_trialtype);									// delete the local trialtype file
+						break;
+				}
+
 			}
 		});
 	},
@@ -51,7 +66,9 @@ trialtypes_obj = {
 		if(user_default == "default_trialtype"){
 			$("#delete_trial_type_button").hide();
       $("#default_user_trialtype_span").html("default_trialtype");
-      $("#trial_type_select")[0].className = $("#trial_type_select")[0].className.replace("user_","default_");
+      $("#trial_type_select").removeClass("user_trialtype")
+                             .addClass("default_trialtype");
+        //[0].className = $("#trial_type_select")[0].className.replace("user_","default_");
 		} else {
 			$("#delete_trial_type_button").show();
 		}
@@ -71,7 +88,7 @@ trialtypes_obj = {
 		}
 		
     //python load if localhost
-    switch(dev_obj.context){
+    switch(Collector.detect_context()){
       case "localhost":
         cleaned_trialtype = trialtype.toLowerCase()
                                      .replace(".html","") +
@@ -86,36 +103,7 @@ trialtypes_obj = {
     }
     
 		
-	},
-	rename_trial_type:function(new_name){
-		var original_name = $("#trial_type_select").val();
-		if(new_name == original_name){
-			bootbox.alert("Your suggested new name is the same as the original name");
-		} else {
-			/*
-			$.post("Studies/TrialTypeEditor/AjaxTrialtypes.php",{
-				action 				: "rename",
-				original_name	: original_name,
-				new_name			: new_name
-			},function(returned_data){
-				console.dir(returned_data);
-				custom_alert(returned_data);
-				//update user_trialtypes
-				master_json.trialtypes.user_trialtypes[new_name] = master_json.trialtypes.user_trialtypes[original_name];
-				delete (master_json.trialtypes.user_trialtypes[original_name]);
-
-				//update dropdown list
-				$("#trial_type_select").append("<option class='user_trialtype'>"+new_name+"</option>");
-				for(var i = 0; i < $("#trial_type_select").find("option").length; i++){
-					if($("#trial_type_select").find("option")[i].innerHTML == original_name){
-						$("#trial_type_select").find("option")[i].remove();
-						$("#trial_type_select").val(new_name);
-					};
-				}
-			});
-			*/
-		}
-	},
+	},	
 	save_trialtype:function(content,
                           name,
                           new_old,
@@ -142,12 +130,12 @@ trialtypes_obj = {
 			}
 			$("#trial_type_file_select").show();
 			$("#default_user_trialtype_span").html("user_trialtype");
-			custom_alert("success - " + name + " created");
+			Collector.custom_alert("success - " + name + " created");
 		} else {
-			custom_alert("success - " + name + " updated");
+			Collector.custom_alert("success - " + name + " updated");
 		}
 		dbx_obj.new_upload({path:"/trialtypes/"+name+".html",contents:content,mode:"overwrite"},function(result){
-			custom_alert("<b>" + name + "updated on dropbox");
+			Collector.custom_alert("<b>" + name + "updated on dropbox");
 		},function(error){
 			bootbox.alert("error: "+error.error+"<br> try saving again after waiting a little");
 		},
@@ -177,7 +165,33 @@ trialtypes_obj = {
 		}
 	}
 }
-function list_trialtypes(){
+function list_trialtypes(to_do_after){
+	
+	eel.expose(list_python_trialtypes);
+	function list_python_trialtypes(python_trialtypes){
+		var python_user_trialtypes = [];
+		python_trialtypes.forEach(function(python_trialtype){
+			var split_trialtype = python_trialtype.replaceAll("\\","/")
+																						.split("/");
+			var this_trialtype = split_trialtype[split_trialtype.length - 1];
+					this_trialtype = this_trialtype.toLowerCase()
+																				 .replace(".html","");
+			
+			if(Object.keys(master_json.trialtypes.user_trialtypes).indexOf(this_trialtype) == -1){
+				python_user_trialtypes.push(this_trialtype);
+				$.get("../User/Trialtypes/" + this_trialtype + ".html", function(trialtype_content){
+				  master_json.trialtypes.user_trialtypes[this_trialtype] = trialtype_content;
+				});
+			}			
+		});
+		python_user_trialtypes.forEach(function(this_trialtype){
+			$("#trial_type_select").append("<option class='user_trialtype'>" + this_trialtype + "</option>");
+		});
+    if(typeof(to_do_after) !== "undefined"){
+      to_do_after();
+    }
+	}
+	
   function process_returned(returned_data){
     
     $("#trial_type_select").empty();
@@ -201,33 +215,39 @@ function list_trialtypes(){
 			$("#trial_type_select").append("<option class='user_trialtype'>"+element+"</option>");
 		});
 		trialtypes_obj.synchTrialtypesFolder();
-  }
-  switch(dev_obj.context){
-    case "server":      
-    case "gitpod":
-    case "github":
-		case "localhost":
-      //retrieve the default trialtypes
-      var default_list = Object.keys(isolation_map["Default"]["DefaultTrialtypes"]);
-
-      default_trialtypes = {};
-      //Need a recursive function here to loop through the trialtypes and then, once all loaded, update the dropdown list. Hmm. Or update the dropdown list asap?
-      function git_default_trialtypes(list){
-        if(list.length > 0){
-          var item = list.pop();
-          $.get(collector_map[item],function(trial_content){
-            default_trialtypes[item.toLowerCase().replace(".html","")] = trial_content;
-            git_default_trialtypes(list);
-          });
-        } else {
-          process_returned(JSON.stringify(default_trialtypes));
+		
+		
+		switch(Collector.detect_context()){
+			case "server":      
+			case "gitpod":
+			case "github":
+				// currently do nothing
+        if(typeof(to_do_after) !== "undefined"){
+          to_do_after();
         }
-      }
-      git_default_trialtypes(default_list);
-
-      break;
-
+				break;
+			case "localhost":
+				eel.list_trialtypes();
+				break;
+		}
   }
+		
+	function get_default_trialtypes(list){
+		if(list.length > 0){
+			var item = list.pop();
+			$.get(collector_map[item],function(trial_content){
+				default_trialtypes[item.toLowerCase()
+															 .replace(".html","")] = trial_content;
+				get_default_trialtypes(list);
+			});
+		} else {
+			process_returned(JSON.stringify(default_trialtypes));
+		}
+	}
+	var default_list = Object.keys(isolation_map["Default"]["DefaultTrialtypes"]);
+
+	default_trialtypes = {};
+	get_default_trialtypes(default_list);
 }
 function valid_trialtype(this_name){
   if(this_name){
@@ -235,7 +255,8 @@ function valid_trialtype(this_name){
     if(this_name == "start_experiment" |
        this_name == "calibration_zoom" |
        this_name == "end_checks_experiment"){
-         bootbox.alert("<b>" + this_name + "</b> is protected, please choose another name");
+         bootbox.alert("<b>" + this_name + "</b>" +
+					"is protected, please choose another name");
       return false;   
     } else {
       return this_name;

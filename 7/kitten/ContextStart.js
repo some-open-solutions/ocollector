@@ -1,16 +1,15 @@
-//
-// Eel functions
-//////////////////
-
+/*
+* Eel functions
+*/
 python_dialog = bootbox.dialog({
   show:false,
   title:"Please wait",
   message:"<div id='python_message'></div>"
 });
 
-
-
-// this is a hack to deal with asynchronous order of parts of the page loading
+/*
+* this is a hack to deal with asynchronous order of parts of the page loading
+*/
 function wait_till_exists(this_function){
   if(typeof(window[this_function]) == "undefined"){
     setTimeout(function(){
@@ -20,16 +19,20 @@ function wait_till_exists(this_function){
     window[this_function]();
   }
 }
-switch(dev_obj.context){
+
+/*
+* Start Collector
+*/
+switch(Collector.detect_context()){
   case "gitpod":
   case "server":
   case "github":
     wait_till_exists("check_authenticated");  //check dropbox    
     break;
   case "localhost":
-    eel.expose(python_bootbox);
+		eel.expose(python_bootbox);
     function python_bootbox(message){
-      custom_alert(message);
+      Collector.custom_alert(message);
     }
 
     eel.expose(python_hide_bb);
@@ -41,16 +44,16 @@ switch(dev_obj.context){
 
     eel.expose(load_master_json);
     function load_master_json(this_json){
-      master_json = this_json;
+			master_json = this_json;
       //renderItems();
       list_surveys();
       first_load = true;
       wait_till_exists("list_experiments");
       wait_till_exists("list_graphics");
-      list_boosts();
-      list_trialtypes();
-      initiate_actions();
-      autoload_boosts();
+      list_mods();
+      wait_till_exists("list_trialtypes");
+      wait_till_exists("initiate_actions");
+      autoload_mods();
       wait_till_exists("list_keys");
       wait_till_exists("list_servers");    
     }

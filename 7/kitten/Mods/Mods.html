@@ -1,0 +1,421 @@
+<!--
+/*  Collector (Garcia, Kornell, Kerr, Blake & Haffey)
+    A program for running experiments on the web
+    Copyright 2012-2016 Mikey Garcia & Nate Kornell
+
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License version 3 as published by
+    the Free Software Foundation.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>
+
+		Kitten release (2019) author: Dr. Anthony Haffey (a.haffey@reading.ac.uk)
+*/
+-->
+<script src="iframe_library.js"></script>
+<style type="text/css" media="screen">
+#auto_mod_btn{
+  display:none;
+}
+#mod_editor {
+	width: 100%;
+	height: 500px;
+}
+#mod_preview{
+	width: 100%;
+	height: 500px;
+}
+#mod_table{
+	position:absolute;
+	
+	width:100%;
+  display:none;
+}
+#delete_mod_btn{
+  display:none;
+}
+#prev_mod_btn{
+  display:none;
+}
+#rename_mod_btn{
+	display:none;
+}
+#save_mod_btn{
+  display:none;
+}
+#mod_table { 
+	position:absolute;
+	top: 120px; 
+}
+</style>
+<nav class="navbar navbar-primary bg-white fixed-top fixed-top-2" id="mod_navbar">
+  <table>
+    <tr>
+      <td>
+        <button class="btn btn-primary" id="new_mod_btn">New</button>
+      </td>
+      <td>
+        <select class="form-control" id="mod_select">
+          <option hidden disabled selected>Select a mod</option>
+        </select>
+      </td>
+      <td>
+        <button class="btn btn-primary"         id="save_mod_btn">Save</button>
+        <button class="btn btn-primary"         id="rename_mod_btn">Rename</button>
+        <button class="btn btn-warning"         id="delete_mod_btn">Delete</button>
+        <button class="btn btn-primary"         id="prev_mod_btn">Preview</button>
+        <button class="btn btn-outline-primary" id="auto_mod_btn">Auto Load</button>
+      </td>
+    </tr>
+  </table>
+</nav>
+<table id="mod_table">
+  <tr>
+    <td style="width:50%">
+      <div id="mod_editor"></div>
+    </td>
+    <td style="width:50%">
+      <iframe id="mod_preview"></iframe>
+    </td>
+  </tr>
+</table>
+<div id="autloaded_mods_div"></div>
+
+<script>
+var mod_editor;
+function mod_ace(){
+  if(typeof(ace) == "undefined"){
+    setTimeout(function(){
+      mod_ace();
+    },1000);
+  } else {
+    mod_editor = ace.edit("mod_editor");
+    mod_editor.setTheme("ace/theme/chrome");
+    mod_editor.session.setMode("ace/mode/html");
+    mod_editor.setOptions({
+      enableBasicAutocompletion: true,
+      enableLiveAutocompletion: true,
+      enableSnippets: false,
+      tabSize:2,
+      wrap:true
+    });
+  }
+}
+mod_ace();
+
+
+
+/////////////
+// Actions //
+/////////////
+
+
+$("#auto_mod_btn").on("click",function(){
+  if(typeof(master_json.autoloaded_mods) == "undefined"){
+    master_json.autoloaded_mods = {};
+  }
+  var mod = $("#mod_select").val();
+  if(typeof(master_json.autoloaded_mods[mod]) !== "undefined"){
+    bootbox.confirm("This mod is currently activated - are you <b>sure</b> you want to deactivate it?",function(result){
+      if(result){
+        delete(master_json.autoloaded_mods[mod]);  //remove item from list
+        $("#auto_mod_btn").removeClass("btn-primary");
+        $("#auto_mod_btn").addClass("btn-outline-primary");
+        update_master_json();
+      }
+    });
+  } else {
+    bootbox.confirm("This mod will start when you start up Collector - are you <b>sure</b> you want to activate it?",function(result){
+      if(result){
+       master_json.autoloaded_mods[mod] = true;  //remove item from list
+        $("#auto_mod_btn").addClass("btn-primary");
+        $("#auto_mod_btn").removeClass("btn-outline-primary");
+        update_master_json();
+      }
+    });
+  }
+});
+
+$("#mod_editor").on("click",function(){
+  helperActivate("mod Code",mod_editor.getValue(),"mod");
+});
+
+$("#mod_editor").on("keyup input",function(){
+  var mod_content = mod_editor.getValue();
+  var mod_name    = $("#mod_select").val();
+  master_json.mods[mod_name].contents = mod_content;
+});
+
+$('#mod_editor').keydown(function (e) {
+  if (e.ctrlKey && e.keyCode == 13) {
+    $("#prev_mod_btn").click();
+  }
+});
+
+$("#mod_select").on("change",function(){
+  var mod = $("#mod_select").val();
+  mod_editor.setValue(master_json.mods[mod].contents);
+  valid_mod();
+  if(typeof(master_json.autoloaded_mods) == "undefined"){
+    master_json.autoloaded_mods = {};
+  }
+  if(typeof(master_json.autoloaded_mods[mod]) !== "undefined"){
+    $("#auto_mod_btn").removeClass("btn-outline-primary");
+    $("#auto_mod_btn").addClass("btn-primary");
+  } else {
+    $("#auto_mod_btn").removeClass("btn-primary");
+    $("#auto_mod_btn").addClass("btn-outline-primary");
+  }
+  update_master_json();
+});
+
+$("#delete_mod_btn").on("click",function(){
+  var mod = $("#mod_select").val();
+	if(mod == $("#posted_script option:selected").text()){
+		bootbox.alert("You have selected <b>" + mod + "</b> to run on your data. Please go to your <b>data</b> tab and change the selected mod to run on your data before deleting this mod.");
+	} else {
+		bootbox.confirm("Are you sure you want to delete <b>" + mod + "</b>?",function(result){
+			if(result){
+				delete(master_json.mods[mod]);
+				//delete dbx file
+				dbx.filesDelete({path:"/mods/"+mod+".html"})
+					.then(function(response) {
+						Collector.custom_alert(mod +" succesfully deleted");
+						$('#mod_select option[value=' + mod + ']').remove();
+
+						$("#mod_select").val("Select a mod");
+						$("#mod_editor").hide();
+						no_valid_mod();
+						update_master_json();
+					})
+					.catch(function(error){
+						report_error("error deleting mod", "error deleting mod");
+					});
+			}
+		});
+	}
+});
+
+$("#new_mod_btn").on("click",function(){
+  bootbox.prompt("What would you like to call your new mod?",function(response){  if(typeof(master_json.mods[response]) !== "undefined"){
+      bootbox.alert("A mod with this name already exists - please come up with a unique name for this mod");
+    } else if(Object.keys(help_obj.surv.type).indexOf(response) !== -1) {
+      bootbox.alert("That name is already taken by an item <b>type</b> in surveys. Please choose another name");
+		} else {
+
+			master_json.mods[response] = {
+				contents : "",
+				location : ""
+			};
+      $('#mod_select').append($('<option>', {
+        value: 	response,
+        text: 	response
+      }));
+      $("#mod_select").val(response);
+
+			$("#posted_script").append($('<option>', {
+				value: 	response,
+				text: 	response
+			}));
+      mod_editor.setValue("");
+      valid_mod();
+
+			var mod_path = "/mods/"+response.replace(".html","") + ".html";
+			dbx_obj.new_upload({
+				path    : mod_path,
+				contents: "",
+				mode    : "overwrite"
+			},function(result){
+				dbx.sharingCreateSharedLink({path:mod_path})
+					.then(function(result){
+						master_json.mods[response].location = result.url;
+						update_master_json();
+					})
+					.catch(function(error){
+						report_error("error creating link for mod",
+                         "error creating link for mod:");
+					});
+
+			},function(error){
+				Collector.custom_alert("Error saving mod - please check your console.");
+				console.dir(error);
+			},
+			"filesUpload");
+    }
+  });
+});
+
+$("#prev_mod_btn").on("click",function(){
+  if(mod_editor.getSelectedText() == ""){
+    var iframe_content = mod_editor.getValue();
+  } else {
+    var iframe_content = mod_editor.getSelectedText();
+  }
+	doc = document.getElementById('mod_preview').contentWindow.document;
+	doc.open();
+	doc.write(libraries + iframe_content);
+	doc.close();
+});
+
+$("#rename_mod_btn").on("click",function(){
+	var old_name = $("#mod_select").val();
+	bootbox.prompt("What would you like to rename this mod to?",function(new_name){
+		if(typeof(master_json.mods[new_name]) !== "undefined"){
+			bootbox.alert("<b>" + new_name + "</b> already exists. Please choose a unique name");
+		} else {
+			if(new_name){ //i.e. not null
+				master_json.mods[new_name] = master_json.mods[old_name];
+				delete(master_json.mods[old_name]);
+				var old_path = "/mods/"+old_name.replace(".html","") + ".html";
+				var new_path = "/mods/"+new_name.replace(".html","") + ".html";
+				dbx.filesMove({from_path : old_path, to_path : new_path})
+					.then(function(result){
+						$('#mod_select option[value=' + old_name + ']').val(new_name);
+						$('#mod_select option[value=' + new_name + ']').text(new_name);
+						$('#posted_script option:contains("'+old_name+'")').text(new_name);update_master_json();
+					})
+					.catch(function(error){
+						report_error("error moving mod", "error moving mod:");
+					});
+			}
+		}
+	});
+});
+
+$("#save_mod_btn").on("click",function(){
+  var mod = $("#mod_select").val();
+  if(mod !== null){
+		var mod_content = mod_editor.getValue();
+    dbx_obj.new_upload({path:"/mods/"+mod+".html",contents:mod_content,mode:"overwrite"},
+    function(){
+
+			if(master_json.mods[mod].location == ""){
+				dbx.sharingCreateSharedLink({path:"/mods/" + response.replace(".html","") + ".html"})
+					.then(function(result){
+						master_json.mods[response].location = result.url;
+					})
+					.catch(function(error){
+						report_error("error saving mod", "error saving mod");
+					});
+			}
+
+			//update exp_json if relevant survey has it
+			if(exp_json !== "" && typeof(exp_json.surveys) !== "undefined"){
+				var relevant_surveys = Object.keys(exp_json.surveys);
+				relevant_surveys.forEach(function(survey){
+					relevant_survey = Collector.PapaParsed(exp_json.surveys[survey]);
+					if(relevant_survey.filter(row => row.type == mod).length > 0){
+						if(typeof(exp_json.mods) == "undefined"){
+							exp_json.mods = {
+								contents:'',
+								location:''
+							};
+						}
+						exp_json.mods[mod] = mod_content;
+					}
+				});
+			}
+			update_master_json();
+    },function(error){
+      Collector.custom_alert("Error saving mod - please check your console.");
+      console.dir(error);
+    },
+		"filesUpload");
+  }
+});
+
+///////////////
+// functions //
+///////////////
+
+function autoload_mods(){
+  if(typeof(master_json.autoloaded_mods) == "undefined"){
+    master_json.autoloaded_mods = {};
+  }
+  if(Object.keys(master_json.autoloaded_mods).length !== 0){
+    bootbox.confirm("Are you sure you want to load the following mods: <br>" + Object.keys(master_json.autoloaded_mods).join("<br>"),function(response){
+      if(response){
+        Object.keys(master_json.autoloaded_mods).forEach(function(mod){
+          $("#autloaded_mods_div").append(master_json.mods[mod]);
+        });
+      }
+    });
+  };
+}
+
+function list_mods(){
+	if(typeof(master_json.mods) == "undefined"){
+		master_json.mods = {};
+	}
+  var mods = Object.keys(master_json.mods).filter(mod => mod !== "_help");
+  mods.sort(function(a,b){
+		return a.toLowerCase().localeCompare(b.toLowerCase());
+	});
+  mods.forEach(function(mod){
+    $('#mod_select').append($('<option>', {
+      value: 	mod,
+      text: 	mod
+    }));
+  });
+	if(typeof(master_json.data) == "undefined"){
+		master_json.data = {
+			scripts:{}
+		};
+	}
+
+	// fill in selects
+	//////////////////
+	var mods_list = Object.keys(master_json.mods).filter(mod => mod !== "_help");
+	mods_list.forEach(function(this_mod){
+		//tidy mods if not already updated
+		if(typeof(master_json.mods[this_mod].location) == "undefined"){
+			master_json.mods[this_mod] = {
+				contents : master_json.mods[this_mod],
+				location : ''
+			}
+			var mod_path = "/mods/"+this_mod.replace(".html","")+".html";
+			dbx.sharingCreateSharedLink({path:mod_path})
+				.then(function(result){
+					master_json.mods[this_mod].location = result.url.replace("www.","dl.");
+					$("#posted_script").append($('<option>', {
+						text : this_mod,
+						value : master_json.mods[this_mod].location.replace("www.","dl.")
+					}));
+				})
+				.catch(function(error){
+					report_error("error created shared link for mod","error creating shared link for mod");
+				});
+		} else {
+			$("#posted_script").append($('<option>', {
+				text : this_mod,
+				value : master_json.mods[this_mod].location.replace("www.","dl.")
+			}));
+		}
+	});
+}
+
+function no_valid_mod(){
+  $("#delete_mod_btn").hide();
+  $("#prev_mod_btn").hide();
+	$("#rename_mod_btn").hide();
+  $("#save_mod_btn").hide();
+  $("#mod_table").hide();
+  $("#auto_mod_btn").hide();
+}
+
+function valid_mod(){
+  $("#delete_mod_btn").show();
+  $("#prev_mod_btn").show();
+	$("#rename_mod_btn").show();
+  $("#save_mod_btn").show();
+  $("#mod_table").show();
+  $("#auto_mod_btn").show();
+}
+</script>
