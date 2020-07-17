@@ -196,7 +196,7 @@ $("#delete_mod_btn").on("click",function(){
 						update_master_json();
 					})
 					.catch(function(error){
-						report_error("error deleting mod", "error deleting mod");
+						Collector.tests.report_error("error deleting mod", "error deleting mod");
 					});
 			}
 		});
@@ -239,7 +239,7 @@ $("#new_mod_btn").on("click",function(){
 						update_master_json();
 					})
 					.catch(function(error){
-						report_error("error creating link for mod",
+						Collector.tests.report_error("error creating link for mod",
                          "error creating link for mod:");
 					});
 
@@ -282,7 +282,7 @@ $("#rename_mod_btn").on("click",function(){
 						$('#posted_script option:contains("'+old_name+'")').text(new_name);update_master_json();
 					})
 					.catch(function(error){
-						report_error("error moving mod", "error moving mod:");
+						Collector.tests.report_error("error moving mod", "error moving mod:");
 					});
 			}
 		}
@@ -302,7 +302,7 @@ $("#save_mod_btn").on("click",function(){
 						master_json.mods[response].location = result.url;
 					})
 					.catch(function(error){
-						report_error("error saving mod", "error saving mod");
+						Collector.tests.report_error("error saving mod", "error saving mod");
 					});
 			}
 
@@ -351,54 +351,62 @@ function autoload_mods(){
 }
 
 function list_mods(){
-	if(typeof(master_json.mods) == "undefined"){
-		master_json.mods = {};
-	}
-  var mods = Object.keys(master_json.mods).filter(mod => mod !== "_help");
-  mods.sort(function(a,b){
-		return a.toLowerCase().localeCompare(b.toLowerCase());
-	});
-  mods.forEach(function(mod){
-    $('#mod_select').append($('<option>', {
-      value: 	mod,
-      text: 	mod
-    }));
-  });
-	if(typeof(master_json.data) == "undefined"){
-		master_json.data = {
-			scripts:{}
-		};
-	}
+  try{
+    if(typeof(master_json.mods) == "undefined"){
+      master_json.mods = {};
+    }
+    var mods = Object.keys(master_json.mods).filter(mod => mod !== "_help");
+    mods.sort(function(a,b){
+      return a.toLowerCase().localeCompare(b.toLowerCase());
+    });
+    mods.forEach(function(mod){
+      $('#mod_select').append($('<option>', {
+        value: 	mod,
+        text: 	mod
+      }));
+    });
+    if(typeof(master_json.data) == "undefined"){
+      master_json.data = {
+        scripts:{}
+      };
+    }
 
-	// fill in selects
-	//////////////////
-	var mods_list = Object.keys(master_json.mods).filter(mod => mod !== "_help");
-	mods_list.forEach(function(this_mod){
-		//tidy mods if not already updated
-		if(typeof(master_json.mods[this_mod].location) == "undefined"){
-			master_json.mods[this_mod] = {
-				contents : master_json.mods[this_mod],
-				location : ''
-			}
-			var mod_path = "/mods/"+this_mod.replace(".html","")+".html";
-			dbx.sharingCreateSharedLink({path:mod_path})
-				.then(function(result){
-					master_json.mods[this_mod].location = result.url.replace("www.","dl.");
-					$("#posted_script").append($('<option>', {
-						text : this_mod,
-						value : master_json.mods[this_mod].location.replace("www.","dl.")
-					}));
-				})
-				.catch(function(error){
-					report_error("error created shared link for mod","error creating shared link for mod");
-				});
-		} else {
-			$("#posted_script").append($('<option>', {
-				text : this_mod,
-				value : master_json.mods[this_mod].location.replace("www.","dl.")
-			}));
-		}
-	});
+    // fill in selects
+    //////////////////
+    var mods_list = Object.keys(master_json.mods).filter(mod => mod !== "_help");
+    mods_list.forEach(function(this_mod){
+      //tidy mods if not already updated
+      if(typeof(master_json.mods[this_mod].location) == "undefined"){
+        master_json.mods[this_mod] = {
+          contents : master_json.mods[this_mod],
+          location : ''
+        }
+        var mod_path = "/mods/"+this_mod.replace(".html","")+".html";
+        dbx.sharingCreateSharedLink({path:mod_path})
+          .then(function(result){
+            master_json.mods[this_mod].location = result.url.replace("www.","dl.");
+            $("#posted_script").append($('<option>', {
+              text : this_mod,
+              value : master_json.mods[this_mod].location.replace("www.","dl.")
+            }));
+          })
+          .catch(function(error){
+            Collector.tests.report_error("error created shared link for mod","error creating shared link for mod");
+          });
+      } else {
+        $("#posted_script").append($('<option>', {
+          text : this_mod,
+          value : master_json.mods[this_mod].location.replace("www.","dl.")
+        }));
+      }
+    });
+    Collector.tests.pass("mods",
+                         "list");
+  } catch(error){
+    Collector.tests.fail("mods",
+                         "list",
+                         error);
+  }
 }
 
 function no_valid_mod(){

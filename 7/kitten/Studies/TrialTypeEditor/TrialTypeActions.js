@@ -172,7 +172,7 @@ function initiate_actions(){
                 });
               })
               .catch(function(error){
-                report_error("problem moving an experiment", "problem moving an experiment");
+                Collector.tests.report_error("problem moving an experiment", "problem moving an experiment");
               });
             
             case "localhost":

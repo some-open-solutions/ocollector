@@ -114,8 +114,7 @@ function check_authenticated(){
     } else {
       dbx = new Dropbox({ accessToken: getAccessTokenFromUrl() });
     }
-    console.dir("dropbox on");
-
+    
     dbx.usersGetCurrentAccount()
     .then(function(account_info){
       $("#dropbox_account_email").html(account_info.email);
@@ -129,10 +128,6 @@ function check_authenticated(){
       console.dir("Dropbox not logged in yet");
       console.dir(error);
     });
-
-    $_GET = window.location.href.substr(1).split("&").reduce((o,i)=>(u=decodeURIComponent,[k,v]=i.split("="),o[u(k)]=v&&u(v),o),{});
-
-
 
   }	else {
     // Set the login anchors href using dbx.getAuthenticationUrl()
@@ -208,7 +203,7 @@ function legacy_initiate_uber(){
                               initiate_master_json();
                             },
                             function(error){
-                              report_error("Initial file causing error in legacy_initiate_uber()", "problems creating initial files");
+                              Collector.tests.report_error("Initial file causing error in legacy_initiate_uber()", "problems creating initial files");
                             },"filesUpload");
 
       });
@@ -249,19 +244,7 @@ function load_master_json(link_created){
 			master_json.mods = {};
 		}
 		renderItems();
-		dbx.filesListFolder({path: '/experiments'})
-			.then(function(response) {
-			// hack to deal with uneven loading of files
-			check_dbx_trialtypes = setInterval(function(){
-				if(typeof(dbx_trialtypes_startup) !== "undefined"){
-					dbx_trialtypes_startup();
-					clearInterval(check_dbx_trialtypes)
-				}
-			},100);
-			})
-			.catch(function(error) {
-				console.dir(error);
-			});
+		
 	});
 }
 function new_dropbox_account(dropbox_dialog){
@@ -302,7 +285,7 @@ function new_dropbox_account(dropbox_dialog){
                           initiate_master_json();
                         },
                         function(error){
-                          report_error("Problem creating initial files in new_dropbox_account()", "Initial master file causing error");
+                          Collector.tests.report_error("Problem creating initial files in new_dropbox_account()", "Initial master file causing error");
                         },"filesUpload");
 
     });

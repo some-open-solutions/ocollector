@@ -44,7 +44,7 @@ $("#delete_exp_btn").on("click",function(){
 							update_handsontables();
 						})
 						.catch(function(error) {
-							report_error("problem deleting an experiment", "problem deleting an experiment");
+							Collector.tests.report_error("problem deleting an experiment", "problem deleting an experiment");
 						});
 				} else {
 					$('#experiment_list option:contains('+ exp_name +')')[0].remove();
@@ -147,7 +147,7 @@ $("#rename_exp_btn").on("click",function(){
           eel.save_experiment(new_name,master_json.exp_mgmt.experiments[new_name]);
           eel.delete_exp(original_name);
           update_master_json();
-          list_experiments();
+          list_studies();
           $("#experiment_list").val(new_name);
           $("#experiment_list").change();
           break;
@@ -156,11 +156,11 @@ $("#rename_exp_btn").on("click",function(){
         dbx.filesMove({from_path:"/Experiments/"+original_name+".json",to_path:"/Experiments/"+new_name+".json"})
           .then(function(result){
 						update_master_json();
-						list_experiments();
+						list_studies();
 						$("#experiment_list").val(new_name);					
           })
           .catch(function(error){
-            report_error("problem moving an experiment", "problem moving an experiment");
+            Collector.tests.report_error("problem moving an experiment", "problem moving an experiment");
           });
       }
 		}
@@ -566,7 +566,7 @@ $("#save_btn").on("click", function(){
 								"filesUpload");              
             })
             .catch(function(error){
-              report_error("problem uploading an experiment", "problem uploading an experiment");
+              Collector.tests.report_error("problem uploading an experiment", "problem uploading an experiment");
             });
 
         },function(error){

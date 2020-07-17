@@ -23,11 +23,13 @@
 /*
 * Check if Collector is still connected
 */
-
-eel.expose(collector_live);
-function collector_live(){
-	$("#top_navbar").addClass("bg-primary");
+if(typeof(eel) !== "undefined"){
+  eel.expose(collector_live);
 }
+function collector_live(){
+  $("#top_navbar").addClass("bg-primary");
+}
+
 
 setInterval(function(){
 	$("#top_navbar").removeClass("bg-primary");   			  		// change background until validated that Collector is live

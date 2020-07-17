@@ -47,7 +47,7 @@ trialtypes_obj = {
 								//do nothing more
 							})
 							.catch(function(error){
-								report_error("problem deleting a trialtype", 
+								Collector.tests.report_error("problem deleting a trialtype", 
 														 "problem deleting a trialtype");
 							});
 						break;
@@ -166,88 +166,99 @@ trialtypes_obj = {
 	}
 }
 function list_trialtypes(to_do_after){
-	
-	eel.expose(list_python_trialtypes);
-	function list_python_trialtypes(python_trialtypes){
-		var python_user_trialtypes = [];
-		python_trialtypes.forEach(function(python_trialtype){
-			var split_trialtype = python_trialtype.replaceAll("\\","/")
-																						.split("/");
-			var this_trialtype = split_trialtype[split_trialtype.length - 1];
-					this_trialtype = this_trialtype.toLowerCase()
-																				 .replace(".html","");
-			
-			if(Object.keys(master_json.trialtypes.user_trialtypes).indexOf(this_trialtype) == -1){
-				python_user_trialtypes.push(this_trialtype);
-				$.get("../User/Trialtypes/" + this_trialtype + ".html", function(trialtype_content){
-				  master_json.trialtypes.user_trialtypes[this_trialtype] = trialtype_content;
-				});
-			}			
-		});
-		python_user_trialtypes.forEach(function(this_trialtype){
-			$("#trial_type_select").append("<option class='user_trialtype'>" + this_trialtype + "</option>");
-		});
-    if(typeof(to_do_after) !== "undefined"){
-      to_do_after();
-    }
-	}
-	
-  function process_returned(returned_data){
-    
-    $("#trial_type_select").empty();
-    $("#trial_type_select").append("<option disabled>Select a trialtype</option>");
-    $("#trial_type_select").val("Select a trialtype");
-    
-    default_trialtypes = JSON.parse(returned_data);
-		user_trialtypes 	 = master_json.trialtypes.user_trialtypes;
-
-		master_json.trialtypes.default_trialtypes = default_trialtypes;
-		default_trialtypes_keys = Object.keys(default_trialtypes).sort((a, b) => a.localeCompare(b, undefined, {sensitivity: 'base'}));
-
-		user_trialtypes_keys = Object.keys(user_trialtypes).sort((a, b) => a.localeCompare(b, undefined, {sensitivity: 'base'}));
-
-		default_trialtypes_keys.forEach(function(element){
-			$("#trial_type_select").append("<option class='default_trialtype'>"+element+"</option>");
-		});
-		master_json.trialtypes.user_trialtypes = user_trialtypes;
-
-		user_trialtypes_keys.forEach(function(element){
-			$("#trial_type_select").append("<option class='user_trialtype'>"+element+"</option>");
-		});
-		trialtypes_obj.synchTrialtypesFolder();
-		
-		
-		switch(Collector.detect_context()){
-			case "server":      
-			case "gitpod":
-			case "github":
-				// currently do nothing
+	try{
+    if(typeof(eel) !== "undefined"){
+      eel.expose(list_python_trialtypes);
+      function list_python_trialtypes(python_trialtypes){
+        var python_user_trialtypes = [];
+        python_trialtypes.forEach(function(python_trialtype){
+          var split_trialtype = python_trialtype.replaceAll("\\","/")
+                                                .split("/");
+          var this_trialtype = split_trialtype[split_trialtype.length - 1];
+              this_trialtype = this_trialtype.toLowerCase()
+                                             .replace(".html","");
+          
+          if(Object.keys(master_json.trialtypes.user_trialtypes).indexOf(this_trialtype) == -1){
+            python_user_trialtypes.push(this_trialtype);
+            $.get("../User/Trialtypes/" + this_trialtype + ".html", function(trialtype_content){
+              master_json.trialtypes.user_trialtypes[this_trialtype] = trialtype_content;
+            });
+          }			
+        });
+        python_user_trialtypes.forEach(function(this_trialtype){
+          $("#trial_type_select").append("<option class='user_trialtype'>" + this_trialtype + "</option>");
+        });
         if(typeof(to_do_after) !== "undefined"){
           to_do_after();
         }
-				break;
-			case "localhost":
-				eel.list_trialtypes();
-				break;
-		}
-  }
-		
-	function get_default_trialtypes(list){
-		if(list.length > 0){
-			var item = list.pop();
-			$.get(collector_map[item],function(trial_content){
-				default_trialtypes[item.toLowerCase()
-															 .replace(".html","")] = trial_content;
-				get_default_trialtypes(list);
-			});
-		} else {
-			process_returned(JSON.stringify(default_trialtypes));
-		}
-	}
-	var default_list = Object.keys(isolation_map["Default"]["DefaultTrialtypes"]);
+      }
+    }
+    
+    function process_returned(returned_data){
+      
+      $("#trial_type_select").empty();
+      $("#trial_type_select").append("<option disabled>Select a trialtype</option>");
+      $("#trial_type_select").val("Select a trialtype");
+      
+      default_trialtypes = JSON.parse(returned_data);
+      user_trialtypes 	 = master_json.trialtypes.user_trialtypes;
 
-	default_trialtypes = {};
-	get_default_trialtypes(default_list);
+      master_json.trialtypes.default_trialtypes = default_trialtypes;
+      default_trialtypes_keys = Object.keys(default_trialtypes).sort((a, b) => a.localeCompare(b, undefined, {sensitivity: 'base'}));
+
+      user_trialtypes_keys = Object.keys(user_trialtypes).sort((a, b) => a.localeCompare(b, undefined, {sensitivity: 'base'}));
+
+      default_trialtypes_keys.forEach(function(element){
+        $("#trial_type_select").append("<option class='default_trialtype'>"+element+"</option>");
+      });
+      master_json.trialtypes.user_trialtypes = user_trialtypes;
+
+      user_trialtypes_keys.forEach(function(element){
+        $("#trial_type_select").append("<option class='user_trialtype'>"+element+"</option>");
+      });
+      trialtypes_obj.synchTrialtypesFolder();
+      
+      
+      switch(Collector.detect_context()){
+        case "server":      
+        case "gitpod":
+        case "github":
+          // currently do nothing
+          if(typeof(to_do_after) !== "undefined"){
+            to_do_after();
+          }
+          break;
+        case "localhost":
+          eel.list_trialtypes();
+          break;
+      }
+    }
+      
+    function get_default_trialtypes(list){
+      if(list.length > 0){
+        var item = list.pop();
+        $.get(collector_map[item],function(trial_content){
+          default_trialtypes[item.toLowerCase()
+                                 .replace(".html","")] = trial_content;
+          get_default_trialtypes(list);
+        });
+      } else {
+        process_returned(JSON.stringify(default_trialtypes));
+      }
+    }
+    var default_list = Object.keys(isolation_map["Default"]["DefaultTrialtypes"]);
+
+    default_trialtypes = {};
+    get_default_trialtypes(default_list);
+    
+    
+    Collector.tests.pass("trialtypes",
+                         "list");
+  } catch(error){
+    Collector.tests.fail("trialtypes",
+                         "list",
+                         error);
+  };
 }
 function valid_trialtype(this_name){
   if(this_name){

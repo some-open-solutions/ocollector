@@ -110,59 +110,67 @@ function get_HoT_data(current_sheet) { // needs to be adjusted for
 
     return data;
 }
-function list_experiments(){
-	name_list = Object.keys(master_json.exp_mgmt.experiments);
-  function update_exp_list(){
-    var select_html = "<select id='experiment_list'  class='custom-select'><option hidden disabled selected>Select a study</option>";
-    name_list.sort(function(a,b){
-      return a.toLowerCase().localeCompare(b.toLowerCase());
-    });
-    name_list.forEach(function(item_name){
-      select_html += "<option>" + item_name + "</option>";
-    });
-    select_html += "</select>";
-    $("#experiments").html(select_html);
-    $("#experiment_list").on("change",function(){
-      if(first_load == false){
-        master_json.exp_mgmt.any_loaded = true;
+function list_studies(){
+  try{
+    name_list = Object.keys(master_json.exp_mgmt.experiments);
+    function update_exp_list(){
+      var select_html = "<select id='experiment_list'  class='custom-select'><option hidden disabled selected>Select a study</option>";
+      name_list.sort(function(a,b){
+        return a.toLowerCase().localeCompare(b.toLowerCase());
+      });
+      name_list.forEach(function(item_name){
+        select_html += "<option>" + item_name + "</option>";
+      });
+      select_html += "</select>";
+      $("#experiments").html(select_html);
+      $("#experiment_list").on("change",function(){
+        if(first_load == false){
+          master_json.exp_mgmt.any_loaded = true;
+          $("#save_btn").click();
+        } else {
+          remove_from_list("Select a dropbox experiment");
+          first_load = false;
+        }			
+        exp_json = master_json.exp_mgmt.experiments[this.value];
+        clean_conditions();
+        $("#dropbox_inputs").show();
+        update_handsontables();
+        update_server_table();
         $("#save_btn").click();
-      } else {
-        remove_from_list("Select a dropbox experiment");
-        first_load = false;
-      }			
-			exp_json = master_json.exp_mgmt.experiments[this.value];
-			clean_conditions();
-			$("#dropbox_inputs").show();
-			update_handsontables();
-			update_server_table();
-			$("#save_btn").click();
-    });
-  }
-	//do longer synch with dropbox if the user is using dropbox
-  if(dropbox_check()){
-    dbx.filesListFolder({path:"/experiments"})
-        .then(function(experiments){
-          experiments.entries.forEach(function(entry){
-            if(entry[".tag"] == "file" && entry.name.indexOf(".json") !== -1 ){
-              var entry_name = entry.name.toLowerCase().replace(".json","");
-              //do not write over master_json for now if there is an experiment json with the same name
-              if(name_list.indexOf(entry_name) == -1){
-                name_list.push(entry_name);
-                synch_experiment(entry_name);
-              }
-            }
-          });
-          update_exp_list();
-        })
-        .catch(function(error){
-          report_error("problem listing the experiments", "problem listing the experiments");
-        });
-  } else { //just a sanity check that the user is in fact using a localhost version
-    switch(Collector.detect_context()){
-      case "localhost":
-        update_exp_list()
-        break;
+      });
     }
+    //do longer synch with dropbox if the user is using dropbox
+    if(dropbox_check()){
+      dbx.filesListFolder({path:"/experiments"})
+          .then(function(experiments){
+            experiments.entries.forEach(function(entry){
+              if(entry[".tag"] == "file" && entry.name.indexOf(".json") !== -1 ){
+                var entry_name = entry.name.toLowerCase().replace(".json","");
+                //do not write over master_json for now if there is an experiment json with the same name
+                if(name_list.indexOf(entry_name) == -1){
+                  name_list.push(entry_name);
+                  synch_experiment(entry_name);
+                }
+              }
+            });
+            update_exp_list();
+          })
+          .catch(function(error){
+            Collector.tests.report_error("problem listing the experiments", "problem listing the experiments");
+          });
+    } else { //just a sanity check that the user is in fact using a localhost version
+      switch(Collector.detect_context()){
+        case "localhost":
+          update_exp_list()
+          break;
+      }
+    }
+    Collector.tests.pass("studies",
+                         "list");
+  } catch(error){
+    Collector.tests.fail("studies",
+                         "list",
+                         error);
   }
 }
 function new_experiment(experiment){
@@ -199,10 +207,10 @@ function new_experiment(experiment){
             }
           })
           .catch(function(error){
-            report_error("new_experiment trying to share link","new_experiment trying to share link");
+            Collector.tests.report_error("new_experiment trying to share link","new_experiment trying to share link");
           });
       },function(error){
-        report_error("new_experiment trying to upload template to dropbox","new_experiment trying to upload template to dropbox");
+        Collector.tests.report_error("new_experiment trying to upload template to dropbox","new_experiment trying to upload template to dropbox");
       },
       "filesUpload");
     } else {
@@ -225,14 +233,14 @@ function renderItems() {
 
   first_load = true;
 
-  list_experiments();
+  list_studies();
 	list_mods();
   list_surveys();
 	list_trialtypes();
 	list_graphics();
   list_servers();
 	initiate_actions();
-  autoload_mods();
+  autoload_mods();  
 }
 function stim_proc_defaults(proc_values,stim_values){
 	var this_exp   = master_json.exp_mgmt.experiments[$("#experiment_list").val()];
@@ -264,7 +272,7 @@ function synch_experiment(entry_name){
 			});
 		})
 		.catch(function(error){
-			report_error("problem synching the experiment","problem synching the experiment");
+			Collector.tests.report_error("problem synching the experiment","problem synching the experiment");
 		});
 }
 function update_dropdown_lists(){	
@@ -422,7 +430,7 @@ function upload_exp_contents(these_contents,this_filename){
 	// note that this is a local function. right?
 	function upload_to_master_json(exp_name,this_content) {
 		master_json.exp_mgmt.experiments[exp_name] = this_content;
-		list_experiments();
+		list_studies();
     upload_trialtypes(this_content);
     upload_surveys(this_content);
     list_surveys();		
@@ -489,7 +497,7 @@ function upload_exp_contents(these_contents,this_filename){
             });
           } else {
             master_json.exp_mgmt.experiments[suggested_name] = content;
-            list_experiments();
+            list_studies();
             $("#upload_experiment_modal").hide();
             upload_to_master_json(exp_name,parsed_contents);
 						$("#save_btn").click();

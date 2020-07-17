@@ -23,6 +23,10 @@ function wait_till_exists(this_function){
 /*
 * Start Collector
 */
+$_GET = window.location.href.substr(1).split("&").reduce((o,i)=>(u=decodeURIComponent,[k,v]=i.split("="),o[u(k)]=v&&u(v),o),{});
+
+Collector.tests.run();                        // display the test dialog before anything else (assuming tests are being run)
+
 switch(Collector.detect_context()){
   case "gitpod":
   case "server":
@@ -45,10 +49,9 @@ switch(Collector.detect_context()){
     eel.expose(load_master_json);
     function load_master_json(this_json){
 			master_json = this_json;
-      //renderItems();
       list_surveys();
       first_load = true;
-      wait_till_exists("list_experiments");
+      wait_till_exists("list_studies");
       wait_till_exists("list_graphics");
       list_mods();
       wait_till_exists("list_trialtypes");

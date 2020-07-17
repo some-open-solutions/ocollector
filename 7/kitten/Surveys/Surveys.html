@@ -289,36 +289,45 @@ function create_survey_HoT(this_survey){
 }
 
 function list_surveys(){
-  $("#survey_select").empty();
-  $("#survey_select").append("<option disabled>Select a survey</option>");
-  $("#survey_select").val("Select a survey");
-    
-  if(typeof(master_json.surveys) == "undefined" ||
-    typeof(master_json.surveys.user_surveys) == "undefined"){
-    master_json.surveys = {
-      preview         : false,
-      user_surveys    : {}
+  try{
+    $("#survey_select").empty();
+    $("#survey_select").append("<option disabled>Select a survey</option>");
+    $("#survey_select").val("Select a survey");
+      
+    if(typeof(master_json.surveys) == "undefined" ||
+      typeof(master_json.surveys.user_surveys) == "undefined"){
+      master_json.surveys = {
+        preview         : false,
+        user_surveys    : {}
+      }
     }
-  }
-	master_json.surveys = typeof(master_json.surveys) == "undefined" ? {} : master_json.surveys;
-	master_json.surveys.default_surveys = {};
+    master_json.surveys = typeof(master_json.surveys) == "undefined" ? {} : master_json.surveys;
+    master_json.surveys.default_surveys = {};
 
-	master_json.surveys.user_surveys = typeof(master_json.surveys.user_surveys) == "undefined" ? {} : master_json.surveys.user_surveys;
-	master_json.surveys.default_surveys = Collector.clean_obj_keys(master_json.surveys.default_surveys);
+    master_json.surveys.user_surveys = typeof(master_json.surveys.user_surveys) == "undefined" ? {} : master_json.surveys.user_surveys;
+    master_json.surveys.default_surveys = Collector.clean_obj_keys(master_json.surveys.default_surveys);
 
-	var def_survey_list  = Object.keys(master_json.surveys.default_surveys).sort();
-	var user_survey_list = Object.keys(master_json.surveys.user_surveys).sort();
+    var def_survey_list  = Object.keys(master_json.surveys.default_surveys).sort();
+    var user_survey_list = Object.keys(master_json.surveys.user_surveys).sort();
 
-  load_default_surveys();
-  user_survey_list.forEach(function(user_survey){
-    $("#survey_select").append($("<option>",{
-			text:user_survey,
-			value:"user|" + user_survey,
-			class:"bg-white text-dark"
-		}));
-	});
-  if(Collector.detect_context() !== "localhost"){
-    synch_surveys();
+    load_default_surveys();    
+    user_survey_list.forEach(function(user_survey){
+      $("#survey_select").append($("<option>",{
+        text:user_survey,
+        value:"user|" + user_survey,
+        class:"bg-white text-dark"
+      }));
+    });
+    if(Collector.detect_context() !== "localhost"){
+      synch_surveys();
+    } else {
+      Collector.tests.pass("surveys",
+                         "list");
+    }
+  } catch(error){
+    Collector.tests.fail("surveys",
+                         "list",
+                         error);
   }
 }
 
@@ -377,6 +386,8 @@ function synch_surveys(){
 			clearInterval(synch_survey_interval);
 			dbx.filesListFolder({path:"/surveys"})
 				.then(function(result){
+          Collector.tests.pass("surveys",
+                               "list");
 					result.entries.forEach(function(entry){
 						if(typeof(master_json.surveys.user_surveys[entry.name.toLowerCase()]) == "undefined"){
 							dbx.sharingCreateSharedLink({path:entry.path_lower})
@@ -387,7 +398,7 @@ function synch_surveys(){
 									});
 								})
 								.catch(function(error){
-									report_error("problem synching the surveys, possibly due to getting the location of a specific survey", "problem synching the surveys, possibly due to getting the location of a specific survey");
+									Collector.tests.report_error("problem synching the surveys, possibly due to getting the location of a specific survey", "problem synching the surveys, possibly due to getting the location of a specific survey");
 								});
 						}
 					});
@@ -396,7 +407,7 @@ function synch_surveys(){
 					//assume that the survey folder doesn't exist yet - reimplement error if it seems like some intervention is needed here.
 					
 					/*
-					report_error("problem synching the surveys, possibly due to listing surveys within the survey folder.", "problem synching the surveys, possibly due to listing surveys within the survey folder.");
+					Collector.tests.report_error("problem synching the surveys, possibly due to listing surveys within the survey folder.", "problem synching the surveys, possibly due to listing surveys within the survey folder.");
 					*/
 				});
 		}
@@ -423,7 +434,7 @@ $("#delete_survey_btn").on("click",function(){
 					$("#save_btn").click();
 				})
 				.catch(function(error){
-        	report_error("problem deleting the survey.", "problem deleting the survey.");
+        	Collector.tests.report_error("problem deleting the survey.", "problem deleting the survey.");
 				});
 		}
 	});

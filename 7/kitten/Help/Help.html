@@ -64,10 +64,7 @@ var help_dictionary = {
 function load_help(this_list){
   if(this_list.length > 0){
     help_item = this_list.pop();
-    console.dir(help_item);
     $.get(help_dictionary[help_item],function(this_help){
-      console.dir("this_help");
-      console.dir(this_help);
       help_obj[help_item.replace(".json","")] = this_help;
       load_help(this_list);
     });
