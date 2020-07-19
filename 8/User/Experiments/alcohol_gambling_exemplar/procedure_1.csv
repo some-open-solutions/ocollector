@@ -1,0 +1,16 @@
+item,trial type,max time,text,Shuffle 1,btn_width,instruct_1,responses_1,instruct_2,responses_2,instruct_3,responses_3,cue_height,cue_width,
+2 to 74,rate_image,user,"<h1>Here's my survey title</h1><br>
+<br>
+<br>
+Hello <b>this is in bold</b> <em>this is in italics</em> <br>
+<br>
+<br>
+Thanks for participating<br>
+<br>
+<b>now it's in bold</b><br>
+<br>
+<br>
+<u>here's something underlined</u><br>
+<br>
+",trials,50px,How pleasant is the image (1 = very unpleasant; 5 = neutral; 9 = very pleasant),1|2|3|4|5|6|7|8|9,How excited/jittery does the image make you feel (1 = very bored; 5 = neutral; 9 = very excited),1|2|3|4|5|6|7|8|9,,,300,400,
+,,,,,,,,,,,,,,

@@ -1,0 +1,406 @@
+<!--
+
+    Collector (Garcia, Kornell, Kerr, Blake & Haffey)
+    A program for running experiments on the web
+    Copyright 2012-2016 Mikey Garcia & Nate Kornell
+
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License version 3 as published by
+    the Free Software Foundation.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>
+
+		Kitten release (2019) author: Dr. Anthony Haffey (a.haffey@reading.ac.uk)
+-->
+<style>
+#add_server{
+  margin:5px;
+}
+#github_login,
+#institute_div > .modal-body{
+  height:80%;
+  overflow-y: auto;
+}
+#ocollector_login{
+  display:none;
+}
+.create_account_btn,
+.delete_account_btn,
+.forgot_password_btn{
+  margin:2px;
+  width:100%;
+}
+.login_register_card{
+  margin: 0 auto; /* Added */
+  float: none; /* Added */
+  margin-bottom: 10px; /* Added */
+}
+.publish_btn,
+.unpublish_btn{
+  margin:2px;
+  width:100%;
+}
+</style>
+
+
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
+<div class="modal" tabindex="-1" role="dialog" id="login_modal">
+	<div id="login_register_span"  style="height:90%">
+		<div class="card text-primary bg-white align-middle login_register_card" style="max-width: 36rem; position: relative; top: 50%; transform: translateY(-50%); ">
+			<div class="card-header bg-primary text-white">				
+				<button type="button" class="close" id="dismiss_login_btn">&times;</button>
+				<h4 class="modal-title">Register  </h4>
+			</div>
+			<div class="card-body">
+        <div class="row">
+					<input id="email_input" name="user_email" type="email" class="form-control" placeholder="email">
+				</div>
+				<div class="row">
+						<input id="password_input" name="user_password" type="password" class="form-control" placeholder="password">
+				</div>
+				<div class="row">
+					<div class="g-recaptcha" data-sitekey="6LelCO4UAAAAAFEh_KGJlAQ5lthFI-kDY4_kv33_"></div>
+				</div>
+        <div id="server_table_div"></div>
+        <button class="btn btn-primary" id="add_server" style="width:100%">Add server</button>
+
+			</div>
+		</div>
+	</div>
+</div>
+
+<script>
+$("#add_server").on("click",function(){
+  //resume here
+  var this_server_info = {
+    save_url:'',
+    registration_url:'',
+    name:''
+  }
+  bootbox.prompt("What is the url of the script that will save your data (and/or email it)?",function(script_url){
+    if(script_url){
+      this_server_info.url = script_url;
+      bootbox.prompt("If your 'server' requires registration, type in the url of the regristration script. Otherwise click 'cancel' to proceed",function(registration_url){
+        this_server_info.registration_url = registration_url;
+        bootbox.prompt("What will you call this server?",function(server_name){
+          if(server_name){
+            this_server_info.name = server_name;
+            if(typeof(master_json.data.servers[server_name]) !== "undefined"){
+              bootbox.confirm("You already have a server called <b>" + server_name + "</b> - do you want to override it?", function(result){
+                master_json.data.servers[this_server_info.name] = {
+                  url : this_server_info.url
+                }
+              });
+            } else {
+              master_json.data.servers[this_server_info.name] = {
+                url : this_server_info.url,
+                registration_url: this_server_info.registration_url
+              }
+            }
+          }
+        });
+      });
+    }
+  });
+});
+
+var  server_info;
+
+function bind_create_account_btns(){
+	$(".create_account_btn").unbind();         										  			// to avoid multiple triggers
+	
+	$(".create_account_btn").on("click",function(){												// when creating a new account
+		if($("#email_input").val().length == 0) {												// check if e-mail present
+			bootbox.alert("You need to put in an e-mail address"); 			
+		} else if( $("#password_input").val().length <8){           			  // check if password is at least 8 characters
+			bootbox.alert("Your password should be at least 8 characters");	  // warn the user if not
+		} else if($("#password_input").val().length < 8){										// if everything is okay
+			var register_url = $(this).find("span")[0].innerHTML;							// find the registration url
+			$.post(register_url,{																							// register the user
+				action: 					      "register",
+				email: 					        $("#email_input").val(),
+				password: 				      $("#password_input").val(),
+				"g-recaptcha-response": $("#g-recaptcha-response").val()        // to try to prevent bots
+			},function(server_response){
+				grecaptcha.reset();																							// reset bot check
+				bootbox.alert(server_response);																	// let user know the server response
+			});
+		}
+	});
+}
+
+function bind_delete_account_btns(){
+	$(".delete_account_btn").unbind();                                    // to avoid multiple triggers
+	
+	$(".delete_account_btn").on("click",function(){
+		if($("#email_input").val().length == 0){													// if missing email
+			bootbox.alert("Input your email address to delete the account."); 
+		} else if( $("#password_input").val().length == 0){                 // if missing password
+			bootbox.alert("You need your password to delete the account." +   
+										"If you've forgotten your password, click on the" + 
+										"'forgot password' button.");
+		} else {																														// if all good:
+			var register_url = $(this).find("span")[0].innerHTML;							
+			bootbox.confirm("Are you sure you want to delete your account" +	
+											"on this server? This will remove your" +
+											"contribution to all experiments, and all" +
+											"experiments in which you are the only" + 
+											"researcher!",function(result){
+				if(result){																											// if they confirm
+					$.post(register_url,{																					// delete the account
+						action: 					      "unregister",
+						email: 					        $("#email_input").val(),
+						password: 				      $("#password_input").val(),
+						"g-recaptcha-response": $("#g-recaptcha-response").val()    // bot check
+					},function(server_response){
+						bootbox.alert(server_response);															// tell them how the server responded
+					}); 
+				}
+			});
+		}
+	});
+}
+
+function bind_forgot_password_btn(){
+	$(".forgot_password_btn").unbind();																		// to avoid multiple triggers
+	$(".forgot_password_btn").on("click",function(){                       
+		if($("#email_input").val().length == 0){													// if missing email
+			bootbox.alert("You are missing your email address");
+		} else {
+			var register_url = $(this).find("span")[0].innerHTML;
+			bootbox.confirm("Just confirming that you want to" +
+											"request to replace your password?",
+											function(result){
+				if(result){																											// if they confirm
+					$.post(register_url,{
+						action: 					      "forgot_password",
+						email: 					        $("#email_input").val(),
+						"g-recaptcha-response": $("#g-recaptcha-response").val()    // bot check
+					},function(server_response){
+						grecaptcha.reset();																					// reset bot check
+						bootbox.alert(server_response);															// let user know the server response
+					}); 
+				}
+			});
+		}
+	});
+}
+
+function bind_unpublish_btn(){
+	$(".unpublish_btn").unbind();
+	$(".unpublish_btn").on("click",function(){
+		if($("#email_input").val().length == 0){													// if missing email
+			bootbox.alert("You are either missing your email address");
+		} else if($("#password_input").val().length == 0){									// if missing password
+			bootbox.alert("You need your password to delete the experiment." +   
+										"If you've forgotten your password, click on the" + 
+										"'forgot password' button.");
+		} else {																														// if all good
+			var register_url = $(this).find("span")[0].innerHTML;
+			var experiment = $("#experiment_list").val();
+			var this_exp   = master_json.exp_mgmt.experiments[experiment];
+			$.post(register_url,{
+				location:               this_exp.location,
+				experiment:             experiment,
+				action:                 "unregister_experiment",
+				email:                  $("#email_input").val(),
+				password:               $("#password_input").val(),
+				"g-recaptcha-response": $("#g-recaptcha-response").val()				// bot check
+			},function(server_response){
+				bootbox.alert(server_response);
+				grecaptcha.reset();																							// reset bot check
+			});
+		}
+	});
+}
+
+function publish_experiment(this_exp,                                   // object with location
+														experiment,																	// experiment name
+														register_url){
+	$.post( register_url,{
+				  location:               this_exp.location,
+				  experiment:             experiment,
+				  action:                 "update_experiment",
+				  email:                  $("#email_input").val(),
+					password:               $("#password_input").val(),
+					"g-recaptcha-response": $("#g-recaptcha-response").val()
+				},function(returned_message){
+					bootbox.alert(returned_message);
+					grecaptcha.reset();
+					if(returned_message == "Your request to be a" +
+																 " collaborator has been sent." |
+						 returned_message == "success" |
+						 returned_message == "You are already registered " +
+																 "with this experiment." |
+						 returned_message == "Still awaiting confirmation that" +
+																 "you are a collaborator. Do contact" + 
+																 " your colleague who originally " +
+																 "created this experiment"){
+						var server_name;
+						var script_url; 
+						server_info.forEach(function(row){
+							if(row.register_url == register_url){
+								server_name = row.server;
+								script_url  = row.script_url;
+							}
+						});
+						var experiment = $("#experiment_list").val();
+						var this_exp   = master_json.exp_mgmt.experiments[experiment];
+						if(typeof(this_exp.data_scripts) == "undefined"){
+							this_exp.data_scripts = {};
+						}
+						this_exp.data_scripts[server_name] = script_url;
+						$("#save_btn").click();
+					} else {
+						bootbox.alert("Something went wrong, " +
+													"please contact Anthony");
+					}
+				})
+				.catch(function(error){
+					bootbox.alert("error here");
+				});
+}
+
+
+function bind_publish_btn(){
+	$(".publish_btn").on("click",function(){
+		if($("#email_input").val().length == 0){													// if missing email	
+			bootbox.alert("You are missing your email address");
+		} else if($("#password_input").val().length < 8) {									// if missing password (or password too short)
+			bootbox.alert("You need a password that is" +
+										"at least 8 characters");
+		} else {
+			var register_url = $(this).find("span")[0].innerHTML;
+			var experiment = $("#experiment_list").val();
+			var this_exp   = master_json.exp_mgmt.experiments[experiment];
+			
+			/*
+				Identify the experiment location
+			*/
+			switch(Collector.detect_context()){                                           
+				case "github":                                                  // i.e. the experiment is on dropbox
+				case "gitpod":                                                  // i.e. the experiment is on dropbox
+				case "server":                                                  // i.e. the experiment is on dropbox
+					publish_experiment(this_exp,                                  // object with location
+														 experiment,																// experiment name
+														 register_url)															 
+					break;                                                        
+				case "localhost":																								// i.e. the experiment is on github
+					if(typeof(master_json.github) == "undefined"){
+						master_json.github = {};
+					}
+					if(typeof(master_json.github.organisation) == "undefined"){
+						master_json.github.organisation = '';
+					}
+					if(typeof(master_json.github.repository) == "undefined"){
+						master_json.github.repository = '';
+					}
+					if(typeof(master_json.github.username) == "undefined"){
+						master_json.github.username = '';
+					}
+					if(master_json.github.repository == ""){
+						bootbox.alert("You appear to be using an installed " +
+						"version of Collector rather than an online version. " +
+						"You will need to identify which github repository " +
+						"you want to push your experiments to before you can " +
+						"register this experiment. To do this, click on the " +
+						"github button in the top right of the page.");
+					} else if(master_json.github.organisation == "" &&
+										master_json.github.username == ""){
+						bootbox.alert("You appear to be using an installed " +
+						"version of Collector rather than an online version. " +
+						"You will need to identify which github user " +
+						"or organsation you are using on github before you can " +
+						"register this experiment. To do this, click on the " +
+						"github button in the top right of the page.");
+					} else {
+						
+						if(master_json.github.organisation !== ""){
+							var github_user_org = master_json.github.organisation;
+						}	else {
+							var github_user_org = master_json.github.username;
+						}
+					
+						this_exp.location = github_user_org + 
+																"/" + 
+																master_json.github.repository;
+																
+						publish_experiment(this_exp,                                // object with location
+															 experiment,															// experiment name
+															 register_url);
+					}
+					break;
+			}
+		}
+	});
+}
+
+
+
+function update_server_table(){
+  if(typeof(master_json.data.servers) == "undefined"){
+		master_json.data.servers = {};
+	}
+	$.get("ServerLocations.csv",function(result){
+    server_info = Collector.PapaParsed(result);
+		server_info.forEach(function(server_row){
+			master_json.data.servers[server_row.server] = server_row;
+		});
+		var server_table =  "<table class='table'>"+
+                        "<thead>" +
+                          "<tr>" +
+                            "<th scope='col'>Server</th>" +
+                            "<th scope='col'>Register User</th>" +
+                            "<th scope='col'>Register Experiment</th>" +
+                          "</tr>" +
+                        "</thead>";
+		server_info.forEach(function(server_row){
+			var servers = master_json.data.servers;
+			if(typeof(servers[server_row.server]) == "undefined"){
+				servers[server_row.server] = {
+					users: [],
+					experiments : {}
+				}
+			}			 
+			//check if the server is in the list of exp.data_scripts
+			if($("#experiment_list").val() == undefined || 
+				 $("#experiment_list").val() == null){
+				var publish_btn_html      = "no experiment selected";      
+			} else {
+				var publish_btn_html = "<button class='btn btn-primary publish_btn'>Publish<span style='display:none'>" + server_row.register_url + "</span></button><button class='btn btn-danger unpublish_btn'>Unpublish<span style='display:none'>" + server_row.register_url + "</span></button>";
+			}
+			
+			var user_button = "<button class='create_account_btn btn btn-primary'>Create Account<span style='display:none'>" + server_row.register_url + "</span></button><button class='delete_account_btn btn btn-danger'>Delete Account<span style='display:none'>" + server_row.register_url + "</span></button><button class='forgot_password_btn btn btn-info'>Forgot password<span style='display:none'>" + server_row.register_url + "</span></button>";
+			
+			
+			server_table += "<tr>"+ 
+												"<td>" + server_row.server + "</td>" +
+												"<td>" + user_button       + "</td>" +
+												"<td>" + publish_btn_html  + "</td>" +
+											"</tr>";
+		}); 
+		server_table += "</table>";
+		$("#server_table_div").html(server_table);		
+		bind_create_account_btns();
+		bind_delete_account_btns();
+		bind_forgot_password_btn();
+		bind_publish_btn();
+		bind_unpublish_btn();
+	});
+}
+
+function list_servers(){
+  server_info = Object.keys(master_json.data.servers);
+  update_server_table();
+}
+$("#dismiss_login_btn").on("click",function(){
+	$("#login_modal").fadeOut();
+});
+</script>
