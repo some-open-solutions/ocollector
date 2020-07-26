@@ -1,0 +1,1294 @@
+<!--
+    This is based on code from OSF repository https://osf.io/jmz79/ that accompanies the publication "Online webcam-based eye tracking in cognitive science: a first look" by Semmelmann & Weigelt, published in Behavior Research Methods in 2017.
+    
+    Updates by Anthony Haffey (a.haffey@reading.ac.uk) 2020 to make this a freeviewing task that works on Collector
+-->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <link href="../libraries/webgazer/css/jquery-ui.css" type="text/css" rel="stylesheet">
+    <link href="../libraries/webgazer/css/jquery.mobile-1.4.5.css" type="text/css" rel="stylesheet">
+    <link href="../libraries/webgazer/css/tolcam.css" type="text/css" rel="stylesheet">
+    <script src="../libraries/webgazer/js/jquery-1.12.3.min.js"></script>
+    <script src="../libraries/webgazer/js/jquery-ui.js"></script>
+    <script src="../libraries/webgazer/js/jquery.mobile-1.4.2.min.js"></script>
+    <script src="../libraries/webgazer/js/simpleheat.js"></script>
+</head>
+<style>
+.stimuli_img{
+  width: {{image_width}};
+  object-fit: fill;
+  vertical-align: middle;
+  height: {{image_height}};
+  position: absolute;
+  transform: translate(-50%, 0);
+  left: 50%;
+  background-repeat: no-repeat;
+  background-size: contain;
+}
+#stimuli_fixation{
+  
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  -moz-transform: translateX(-50%) translateY(-50%);
+  -webkit-transform: translateX(-50%) translateY(-50%);
+  transform: translateX(-50%) translateY(-50%);
+  font-size:100px;
+  text-align:center;
+  height:150px;
+}
+#stimuli_img_left{
+  margin-left: {{left_position}};
+}
+#stimuli_img_right{
+  /* left:  75%; */
+  margin-left: {{right_position}};
+}
+</style>
+<body>
+  <div id="instruction">
+      <div id="instruction_1" class="instruction_page">
+        This experiment is based on code from the OSF repository <a href="https://osf.io/jmz79/" target="_blank">https://osf.io/jmz79/</a> which accompanies the publication "Online webcam-based eye tracking in cognitive science: a first look" by Semmelmann & Weigelt, published in Behavior Research Methods in 2017. Please find the abstract and information about the code, analyses, and data below. This work is intended for scientific use only.
+  Written by Kilian Semmelmann, tolcam@ksemmelm.de, 2017. <br><br>
+  
+  Updates by Anthony Haffey (a.haffey@reading.ac.uk) 2020 to make this a task that works on Collector.
+      </div>
+
+      <div id="instruction_2" class="instruction_page">
+          <h1>Webcam Setup</h1>
+          <br />
+          <div id="setup_after">
+              You can take a short break and move your head. Before continuing, please follow the instructions noted below.<br />
+          </div>
+          <br />
+          Please turn off your mobile phone and close all other programs and websites. Then carefully read and follow these instructions:<br />
+          <img src="../libraries/webgazer/imgs/instructions_donttilt.png" style = "width: 100%; margin-top: 20px; margin-bottom: 20px;"/>
+          <br />
+          <span id="webcam_insert"></span>
+          <br />
+          <button class="btn btn-primary" id="flip_cam_btn" style="display:none">Flip cam</button>
+          <div id="setup_first">
+              This study consists of multiple five-minute parts with pauses inbetween. After you clicked "start", please avoid moving your head. If you move too much, the calibration can fail and you might not be able to finish the study.
+          </div>
+          <br />
+      </div>
+
+      <div id="instruction_3" class="instruction_page">
+        <div id="beforetherest">
+          <h1>Proceed</h1>
+          <br />
+          Click "Proceed" to move onto the next trial
+          <button onclick="Trial.submit()" class="btn">Proceed</button>
+        </div>
+      </div>
+
+      <div id="instruction_back" class="instruction_navigation">
+        <div id="instruction_back_text">
+          &lt;
+        </div>
+      </div>
+      <div id="instruction_continue" class="instruction_navigation">
+        <div id="instruction_continue_text">
+          &gt;
+        </div>
+      </div>
+  </div>
+
+  <div id="calibration_dot" class="stimuli"><div id="calibration_cnt">0</div></div>
+  <div id="stimulus" class="stimuli"><img src="../libraries/webgazer/imgs/talking.jpg" /></div>
+  <div id="stimuli_dot" class="stimuli"></div>
+  <div id="stimuli_bar" class="stimuli"></div>
+  <div id="stimuli_fixation" class="stimuli">+</div>
+  <div id="stimuli_prime" class="stimuli"></div>
+  <div id="stimuli_target" class="stimuli">X</div>
+  <img id="stimuli_img_left" class="stimuli stimuli_img"/>
+  <img id="stimuli_img_right" class="stimuli stimuli_img"/>
+  <div id="instruction_message"></div>
+
+  <div id="message">
+    no message
+  </div>
+</body>
+</html>
+<script>
+
+//////////////////////
+// Borcsok variables
+//////////////////////
+
+var image_pair;
+Trial.set_timer(function(){
+  function refuse_height(){
+    bootbox.confirm("Your window height needs to be at least {{min_height}} before starting. Please make your window as big as possible before proceeding.", function(result){
+      if(window.innerHeight < parseFloat("{{min_height}}".replace("px",""))){
+        refuse_height();
+      }
+    });
+  };
+  function refuse_width(){
+    bootbox.confirm("Your window width needs to be at least {{min_width}} before starting. Please make your window as big as possible before proceeding.", function(result){
+      if(window.innerWidth < parseFloat("{{min_width}}".replace("px",""))){
+        refuse_width();
+      }
+    });
+  }
+  if(window.innerHeight < parseFloat("{{min_height}}".replace("px",""))){
+    refuse_height();
+  }
+  if(window.innerWidth <  parseFloat("{{min_width}}".replace("px",""))){
+    refuse_width();
+  }
+},0);
+
+
+//////////////////////
+// default settings //
+//////////////////////
+
+var calibrations = "{{calibrations}}";
+var freeview_image_file = "{{freeview_image_file}}".toLowerCase();
+var design_type = "{{design_type}}";
+var calibration_skip = "{{calibration_skip}}";
+var image_height = "{{image_height}}";
+var image_width = "{{image_width}}";
+var left_side = "{{left_side}}";
+var save_script = "{{save_script}}";
+var stim_duration = "{{stim_duration}}";
+var trials = "{{trials}}";
+var trial_order = "{{trial_order}}";
+
+
+if(calibrations.indexOf("calibrations") !== -1){
+  calibrations = 13;
+}
+if(calibration_skip.indexOf("calibration_skip") !== -1){
+  calibration_skip = "no";
+}
+if(stim_duration.indexOf("stim_duration") !== -1){
+  stim_duration = 2000;
+}
+if(left_side.indexOf("left_side") !== -1){
+  left_side = "counterbalance";  
+}
+
+
+
+
+/************************************
+ * HELPER FUNCTIONS
+ ************************************/
+/**
+ * Shuffles array in place.
+ * @param {Array} a items The array containing the items.
+ * @author http://stackoverflow.com/a/2450976/4175553
+ */
+function shuffle(array) {
+    var currentIndex = array.length, temporaryValue, randomIndex;
+
+    // While there remain elements to shuffle...
+    while (0 !== currentIndex) {
+
+        // Pick a remaining element...
+        randomIndex = Math.floor(Math.random() * currentIndex);
+        currentIndex -= 1;
+
+        // And swap it with the current element.
+        temporaryValue = array[currentIndex];
+        array[currentIndex] = array[randomIndex];
+        array[randomIndex] = temporaryValue;
+    }
+
+    return array;
+}
+
+/************************************
+ * WEBCAM PARAMETERS
+ ************************************/
+var cam = {};
+cam.overlay = '';
+cam.width = 400;
+cam.height = 300;
+cam.topDist = '0px';
+cam.leftDist = '0px';
+cam.recording = 0;
+cam.validating = 0;
+cam.calibrating = 0;
+cam.initialized = 0;
+
+/************************************
+ * CALIBRATION PARAMETERS
+ ************************************/
+var calibrating = 0;
+var t_calibration_start;
+var calibration_no = 0;
+var calibration = {};
+calibration.points = [];
+calibration.method = "watch"; // click or watch
+calibration.calibrations = calibrations // how many calibration dots
+calibration.duration = 20; // how often does one position get sampled
+calibration.instruction = 'Please fixate on the dot <br />that will appear. <br /><br />Do not move your head,<br />only use your eyes.';
+if("{{skip_instruct}}" == "on"){
+  calibration.instruction_duration = 0;
+} else {
+  calibration.instruction_duration = 5000;
+}
+
+/************************************
+ * VALIDATION PARAMETERS
+ ************************************/
+var validating = 0;
+var validation_no = 0;
+var validation_current = {"x": 0, "y": 0};
+var validation_attempt = 1;
+var validation = {};
+validation.validations = 5;
+validation.duration = 20;
+validation.points = [];
+validation.timeout = 20000; // if no validation happens within X ms, validation will be ended and re-calibrated
+validation.attempts = 5; // how often can validation be failed PER validation
+validation.distance = 200; // offset distance in pixel to be a valid validation sample
+
+
+/************************************
+ * DESIGN
+ ************************************/
+var design = {};
+var block_no = 0;
+var trial_no = 0;
+
+eyetrack_designs = {
+  freeview:   {'type': 'freeview', 'trials': trials, 'iti': 500, 'instruction': '{{text}}', 'instruction_duration': 5000},
+  simple: {'type': 'simple', 'trials': 24, 'iti': 500, 'instruction': 'Please look at the cross.<br />When the dot appears, please look at it.<br /><br /><br />Do not move your head, <br />only use your eyes.', 'instruction_duration': 5000},
+  pursuit: {'type': 'pursuit', 'trials': 24, 'iti': 500, 'instruction': 'A black dot will appear. Please <br />look at it. When it turns <span style="color: #dd494b;">red</span>,<br /> Please follow its movement with your eyes.<br /><br />Do not move your head, <br />only use your eyes.', 'instruction_duration': 7000},
+  
+}
+
+if("{{skip_instruct}}" == "on"){
+  eyetrack_designs.freeview.instruction_duration = 0;
+} 
+
+
+design.blocks = [
+  eyetrack_designs[["{{design_type}}"]]
+];
+
+//design.blocks = shuffle(design.blocks);
+design.blocks_randomized = 1; // shall the blocks be shuffled?
+design.trials_randomized = 1; // same for trials
+design.calibrate = "high";
+design.recalibrate = 1;
+
+
+
+/************************************
+ * DATA VARIABLES
+ ************************************/
+var data = [];
+var data_current = {};
+var status = '-';
+
+/**
+data.design = jQuery.extend(true, {}, design);
+ **/
+
+/************************************
+ * SET UP WEBGAZER
+ ************************************/
+function loadWebgazer() {
+  $('canvas').remove();
+  cam.initialized = 0;
+  $.getScript( "../libraries/webgazer/js/webgazer_old.js" )
+    .done(function( script, textStatus ) {
+      initializeWebgazer();
+      $('#message').html('Please allow for access on your Webcam on the top part of the screen. <br /><br />Remember: We will NOT transmit your video, but only process it locally and transmit numbers to our server.').show();
+    })
+    .fail(function( jqxhr, settings, exception ) {
+      $( "div.log" ).text( "Triggered ajaxError handler." );
+    });
+}
+
+
+function initializeWebgazer() {
+    
+  //webgazer.clearData()
+  webgazer.setRegression('ridge') /* currently must set regression and tracker */
+    .setTracker('clmtrackr')
+    .setGazeListener(function(d, clock) {
+      //console.log(data); /* data is an object containing an x and y key which are the x and y prediction coordinates (no bounds limiting) */
+      //console.log(clock); /* elapsed time in milliseconds since webgazer.begin() was called */
+      if (d !== null) {
+
+        if (cam.calibrating == 1) {
+            var $cd = $('#calibration_dot');
+            var cx = parseInt(Math.round($cd.offset().left));
+            var cy = parseInt(Math.round($cd.offset().top));
+            var cp = d;
+            var dist = Math.sqrt(((cp.x - cx) * (cp.x - cx)) + ((cp.y - cy) * (cp.y - cy)));
+            var c = $('#calibration_cnt').html();
+            data_current.raw.push({'time': clock, 'x': cp.x, 'y': cp.y, 'cx': cx, 'cy': cy, 'dist': dist, 'c': c});
+        }
+
+
+        if (cam.validating == 1) {
+            // see whether dx and dy are within 100px radius of target
+            var dist = parseInt(Math.sqrt(((d.x - validation_current.x) * (d.x - validation_current.x)) + ((d.y - validation_current.y) * (d.y - validation_current.y))));
+            var c = parseInt($('#calibration_cnt').html());
+            if (dist < validation.distance) {
+                data_current.raw.push({'time': clock, 'x': d.x, 'y': d.y, 'vx': validation_current.x, 'vy': validation_current.y, 'dist': dist, 'c': c, 'valid': 1});
+                if (c < calibration.duration) {
+                    $('#calibration_cnt').html(++c);
+                } else {
+                    cam.validating = 0;
+                    clearTimeout(t);
+                    $('#calibration_dot').hide();
+                    validation_no++;
+                    saveData();
+                    setTimeout("validate();", 500);
+                }
+            } else {
+                data_current.raw.push({'time': clock, 'x': d.x, 'y': d.y, 'vx': validation_current.x, 'vy': validation_current.y, 'dist': dist, 'c': c, 'valid': 0});
+            }
+        }
+
+        if (cam.recording == 1) {
+            var tx = -1;
+            var ty = -1;
+            if (data_current.task == "simple" || data_current.task == "pursuit") {
+                var $sd = $('#stimuli_dot');
+                var tx = parseInt(Math.round($sd.offset().left));
+                var ty = parseInt(Math.round($sd.offset().top));
+            }
+            data_current.raw.push({'time': clock, 'x': d.x, 'y': d.y, 'tx': tx, 'ty': ty, 'status': status});
+            //console.log(data.trials[trial_no].raw.length + ' ' + d.x + ' ' + d.y);
+        }
+      }
+    })
+    .begin()
+    .showPredictionPoints(false); /* shows a square every 100 milliseconds where current prediction is */
+
+  cl = webgazer.getTracker().clm;
+
+  checkWebgazer();
+}
+
+
+function checkWebgazer() {
+  if (webgazer.isReady()) {
+    console.log('webgazer is ready.');
+    initializeCam();
+  } else {
+    setTimeout(checkWebgazer, 100);
+  }
+}
+
+/************************************
+ * SET UP WEBCAM
+ ************************************/
+function initializeCam() {
+  var video = document.getElementById('webgazerVideoFeed');
+  video.style.display = 'block'; // block
+  video.style.position = 'relative';
+  video.width = cam.width;
+  video.height = cam.height;
+  video.style.margin = '0px';
+  $('#webgazerVideoFeed').css({
+    'left': '50%',
+    'transform': 'translate(-50%, 0)',
+    'margin': '20px'
+  }).detach().insertAfter('#webcam_insert').get(0).play();
+  flipped = false;
+  $("#flip_cam_btn").show();
+  $("#flip_cam_btn").on("click",function(){
+    if(flipped == false){
+      flipped = true;
+      $("#webgazerVideoFeed").css("transform","scaleX(-1)");
+      $("#webgazerVideoFeed").css("-webkit-transform", "scaleX(-1)");
+    } else {
+      flipped = false;
+      $("#webgazerVideoFeed").css("transform","scaleX(1)");
+      $("#webgazerVideoFeed").css("-webkit-transform", "scaleX(1)");
+    }
+  });
+
+  webgazer.params.imgWidth = cam.width;
+  webgazer.params.imgHeight = cam.height;
+
+  cam.overlay = document.getElementById('overlay');
+  if (cam.overlay === null) {
+      cam.overlay = document.createElement('canvas');
+      cam.overlay.id = 'overlay';
+      document.body.appendChild(cam.overlay);
+  }
+  cam.overlay.style.position = 'absolute';
+  cam.overlay.width = cam.width;
+  cam.overlay.height = cam.height;
+  cam.overlay.style.top = cam.topDist;
+  cam.overlay.style.left = cam.leftDist;
+  cam.overlay.style.margin = '0px';
+
+  cam.initialized = 1;
+
+  $('#message').html('Webcam access successful.').delay(1000).fadeOut(1000);
+}
+
+/************************************
+ * START BLOCKS
+ ************************************/
+function prepareBlock() {
+  if (cam.initialized == 1) {
+    if (block_no < design.blocks.length) {
+      trial_no = 0;
+
+      webgazer.resume();
+      if (design.recalibrate == 1 || block_no == 0) {
+        $('#instruction_message').html(calibration.instruction).show();
+        setTimeout("$('#instruction_message').fadeOut(1000);", calibration.instruction_duration);
+        setTimeout("startCalibration();", design.blocks[block_no].instruction_duration + 2000);
+      } else {
+        $('#instruction_message').html(design.blocks[block_no].instruction).show();
+        setTimeout("$('#instruction_message').fadeOut(1000);", design.blocks[block_no].instruction_duration);
+        setTimeout("prepareTrial();", design.blocks[block_no].instruction_duration + 2000);
+      }
+    } else {
+      endExperiment();
+    }
+  } else {
+    setTimeout("prepareBlock();", 500);
+  }
+}
+
+
+/************************************
+ * CALIBRATE
+ ************************************/
+function startCalibration() {
+  if(calibration_skip == "skip" || 
+     calibration_skip == "on" ||
+     calibration_skip == "true"){
+    endValidation()
+  } else {
+    $('.stimuli').hide();
+    $('#calibration_dot').hide();
+    if (block_no == 0) {
+        $('#calibration_dot').click(function() {
+            calibrateHit();
+        });
+    }
+    calibration_no = 0;
+    //webgazer.clearData();
+    window.localStorage.clear();
+    //webgazer.begin();
+    t_calibration_start = new Date().getTime();
+    calibrate();
+  }
+}
+
+function calibrate() {
+    clearTimeout(t);
+    if (calibration_no < calibration.calibrations) {
+        $('#calibration_cnt').html(calibration.duration);
+        $c = $('#calibration_dot');
+        //var c = Math.floor(Math.random() * calibration.points.length);
+        //var p = calibration.points.splice(c, 1)[0];
+        if (calibration.points.length == 0) {
+            calibration.points = shuffle([
+                {x: "20%", y: "20%"},
+                {x: "50%", y: "20%"},
+                {x: "80%", y: "20%"},
+                {x: "20%", y: "50%"},
+                {x: "50%", y: "50%"},
+                {x: "80%", y: "50%"},
+                {x: "20%", y: "80%"},
+                {x: "50%", y: "80%"},
+                {x: "80%", y: "80%"},
+                {x: "35%", y: "35%"},
+                {x: "65%", y: "35%"},
+                {x: "35%", y: "65%"},
+                {x: "65%", y: "65%"}
+            ]);
+        }
+        var p = calibration.points.pop();
+        $c.css({
+            'left' : p.x,
+            'top' : p.y
+        });
+
+        data_current = {
+            'type': 'calibration',
+            'block': block_no,
+            'trial': calibration_no,
+            'x': p.x,
+            'y': p.y,
+            'raw': []
+        };
+
+        cam.calibrating = 1;
+        $c.show();
+        if (calibration.method == 'watch') {
+            t = setTimeout("autoCalibration();", 750);
+        }
+    } else {
+        endCalibration();
+    }
+}
+
+function calibrateHit() {
+    var c = $('#calibration_cnt').html();
+    /*
+    if ($('#webgazerVideoFeed').css('display') == 'block') {
+        $('#webgazerVideoFeed').css({
+            top: cam.topDist,
+            left: cam.leftDist,
+            display: 'none',
+            transform: '0'
+        });
+    }*/
+    if (c > 1 && cam.calibrating == 1) {
+        $('#calibration_cnt').html(--c);
+        if (calibration.method == "watch") {
+            t = setTimeout("autoCalibration();", 100);
+            //requestAnimationFrame(autoCalibration);
+        }
+    } else {
+        $('#calibration_cnt').html(9999);
+        clearTimeout(t);
+        cam.calibrating = 0;
+        $('#calibration_dot').hide();
+        calibration_no++;
+        saveData();
+        calibrate();
+    }
+    return false;
+}
+
+var t;
+function autoCalibration() {
+    calibrateLog();
+    if (cam.calibrating == 1) {
+        calibrateHit();
+    }
+}
+
+function calibrateLog() {
+    var $cd = $('#calibration_dot');
+    var cx = parseInt(Math.round($cd.offset().left));
+    var cy = parseInt(Math.round($cd.offset().top));
+    webgazer.watchListener(cx, cy);
+}
+
+
+function endCalibration() {
+    clearTimeout(t);
+    $('#calibration_dot').unbind("click");
+    startValidation();
+}
+
+
+
+/************************************
+ * VALIDATE
+ ************************************/
+function startValidation() {
+    validation_no = 0;
+    validate();
+}
+
+function validate() {
+    clearTimeout(t);
+    if (validation_no < validation.validations) { // if we there are validations left
+        $('#calibration_cnt').html(0);
+        var $c = $('#calibration_dot');
+        if (validation.points.length == 0) {
+            validation.points = shuffle([
+                {x: "20%", y: "20%"},
+                {x: "80%", y: "20%"},
+                {x: "50%", y: "50%"},
+                {x: "20%", y: "80%"},
+                {x: "80%", y: "80%"}
+                                        ]);
+        }
+        var vp = validation.points.pop();
+        $c.css({
+            'left' : vp.x,
+            'top' : vp.y
+        });
+        $c.show();
+        validation_current.x = Math.round($c.offset().left);
+        validation_current.y = Math.round($c.offset().top);
+
+        data_current = {
+            'type': 'validation',
+            'block': block_no,
+            'trial': validation_no,
+            'x': validation_current.x,
+            'y': validation_current.y,
+            'raw': []
+        };
+        cam.validating = 1;
+        t = setTimeout("validateFail();", validation.timeout);
+//t = setTimeout('validation = 0;', 3000);
+    } else {
+        endValidation();
+    }
+}
+
+function validateFail() {
+  data_current.type = 'validationfail';
+  data_current.attempt = validation_attempt;
+  saveData();
+
+
+  cam.validating = 0;
+  webgazer.pause();
+
+  $('.stimuli').hide();
+  if (validation_attempt >= validation.attempts) {
+      $('#message').html('Unforuntately, the calibration failed too many times. Therefore, you can not participate in this study. Please contact <a href="mailto:kilian.semmelmann@rub.de">kilian.semmelmann@rub.de</a> if you have any questions. Thanks for your interest.').show();
+  } else {
+      validation_attempt++;
+      $('#message').html('The calibration failed. <br />Please follow the instructions and try again (try ' + (validation_attempt) + ' of ' + validation.attempts + ').').show().delay(5000).fadeOut(1000);
+      $('#instruction').show();
+  }
+  // TOOD: log validation-fail
+}
+
+function endValidation() {
+    cam.validating = 0
+    validation_attempt = 1;
+    webgazer.pause();
+    $('#instruction_message').html(design.blocks[block_no].instruction).show();
+    setTimeout("$('#instruction_message').fadeOut(1000);", design.blocks[block_no].instruction_duration);
+    setTimeout("prepareTrial();", design.blocks[block_no].instruction_duration + 2000);
+}
+
+
+
+/************************************
+ * START EXPERIMENT
+ ************************************/
+var t_trial_start;
+function prepareTrial() {
+    status = "prepare";
+    $('.stimuli').hide();
+    data_current = {
+        'type': 'trial',
+        'block': block_no,
+        'trial': trial_no,
+        'raw': []
+    };
+    webgazer.resume();
+    startTrial();
+}
+
+
+function startTrial() {
+    t_trial_start = new Date().getTime();
+    $('#stimuli_fixation').show();
+    status = "fixation_onset";
+    // use start function of block-type name
+    var fn = design.blocks[block_no].type+"Start";
+    window[fn]();
+}
+
+
+var heat;
+function endTrial() {
+    clearTimeout(t);
+    cam.recording = 0;
+    webgazer.pause();
+    status = "end";
+    $('.stimuli').hide();
+    trial_no++;
+    saveData();
+
+    if (trial_no < design.blocks[block_no].trials) {
+        setTimeout("prepareTrial();", design.blocks[block_no].iti);
+    } else {
+        block_no++;
+        if (block_no < design.blocks.length) {
+            window.localStorage.clear();
+            webgazer.clearData();
+            //loadWebgazer();
+            //prepareBlock();
+            navigation('pause');
+        } else {
+            endExperiment();
+        }
+    }
+}
+
+
+function saveData() {
+  
+  data_current.raw = data_current.raw.map(function(row){
+    row.x = row.x - window.innerWidth/2;
+    row.y = row.y - window.innerHeight/2;
+    
+    if(typeof(image_pair) !== "undefined"){
+      Object.keys(image_pair).forEach(function(key){
+        row[key] = image_pair[key];
+      });
+    }
+    row.screen_width  = screen.width;
+    row.screen_height = screen.height;
+    //row.left_image  = image_pair.image_1;
+    //row.right_image = image_pair.image_2;
+    
+    return row;
+  });
+  
+  data.push(data_current);
+  data_current = {};
+  sendData();
+}
+
+function sendData() {
+  switch(parent.parent.dev_obj.context){
+    case "localhost":
+      data.forEach(function(trial,trial_no){
+        if (trial !== null){
+          parent.parent.eel.save_data(parent.parent.Study.get_vars.location,
+                        parent.parent.$("#participant_code").val(),
+                        "freeviewing-" + trial_no,
+                        Papa.unparse(data[trial_no].raw))
+           parent.parent.online_save(parent.parent.Study.get_vars.location,
+                    parent.parent.$("#participant_code").val() + "-trial-" + trial_no,
+                    parent.parent.$("#completion_code").val(),
+                    parent.parent.$("#prehashed_code").val(),  
+                    Papa.unparse(data[trial_no].raw),          //the data
+          save_script.split("|"),
+          function(){
+            parent.parent.online_data_obj.saves_ended ++;
+          });
+          data[trial_no] = null;
+        }
+      });
+      break;
+    case "github":
+      data.forEach(function(trial,trial_no){
+        if (trial !== null){
+                   parent.parent.online_save(parent.parent.Study.get_vars.location,
+                    parent.parent.$("#participant_code").val() + "-trial-" + trial_no,
+                    parent.parent.$("#completion_code").val(),
+                    parent.parent.$("#prehashed_code").val(),  
+                    Papa.unparse(data[trial_no].raw),          //the data
+          save_script.split("|"),
+          function(){
+            parent.parent.online_data_obj.saves_ended ++;
+          });
+          data[trial_no] = null;
+        }
+      });
+      break;
+  }
+}
+
+
+function endExperiment() {
+  Trial.submit();
+}
+
+
+/************************************
+ * SIMPLE DOT VIEWING PARADIGM
+ * If you want to introduce your own paradigms, follow the same structure and extend the design array above.
+ ************************************/
+var tSimple = {};
+tSimple.positions = [];
+function simpleStart() {
+    // if we don't have dot-positions any more, refill the array
+    if (tSimple.positions.length == 0) {
+        tSimple.positions = shuffle([
+            {x: "20%", y: "20%"},
+            {x: "50%", y: "20%"},
+            {x: "80%", y: "20%"},
+            {x: "20%", y: "50%"},
+            {x: "80%", y: "50%"},
+            {x: "20%", y: "80%"},
+            {x: "50%", y: "80%"},
+            {x: "80%", y: "80%"}
+        ]);
+    }
+    var pos = tSimple.positions.pop();
+    $('#stimuli_dot').css({
+        'top': pos.y,
+        'left': pos.x
+    });
+    data_current.task = 'simple';
+    data_current.x = pos.x;
+    data_current.y = pos.y;
+    data_current.condition = 'dot_' + pos.x + '_' + pos.y;
+
+    cam.recording = 1;
+    setTimeout('$("#stimuli_fixation").hide(); status = "fixation_offset";', 1500);
+    setTimeout('simpleShowdot();', 2000);
+}
+
+function simpleShowdot() {
+    status = "stimulus_onset";
+    $("#stimuli_dot").show();
+    setTimeout('status = "stimulus_offset"; endTrial();',  2000);
+}
+
+
+/************************************
+ * POSNER VIEWING PARADIGM
+ ************************************/
+function posnerStart() {
+    var p = Math.random() >= 0.5 ? '&gt;&gt;&gt;' : '&lt;&lt;&lt;';
+    $('#stimuli_prime').html(p);
+
+    var t = Math.random() >= 0.5 ? 'X' : 'N';
+    $('#stimuli_target').html(t);
+
+    var cond = Math.random() >= 0.7 ? 'incongruent' : 'congruent';
+
+    var tpos = 'left';
+    if ((cond == 'incongruent' && p == '&lt;&lt;&lt;') || ((cond == 'congruent' && p == '&gt;&gt;&gt;'))) {
+        tpos = 'right';
+    }
+
+    var pos = {};
+    if (tpos == 'left') {
+        pos.x = '20%';
+        pos.y = '30%';
+    } else {
+        pos.x = '80%';
+        pos.y = '30%';
+    }
+
+
+    $('#stimuli_target').css({
+        'top': pos.x,
+        'left': pos.y
+    });
+
+
+    data_current.task = 'posner';
+    data_current.x = pos.x;
+    data_current.y = pos.y;
+    data_current.condition = 'posner_' + pos.x + '_' + pos.y + '_' + tpos;
+
+    cam.recording = 1;
+    setTimeout("$('#stimuli_fixation').hide();", 1000);
+    setTimeout('posnerShowprime();', 1500);
+}
+
+function posnerShowprime() {
+    $('#stimuli_prime').show();
+    setTimeout("posnerShowTarget();", 300);
+}
+
+function posnerShowTarget() {
+    $('#stimuli_prime').hide();
+    $('#stimuli_target').show();
+    setTimeout("endTrial();", 1500);
+}
+
+
+/************************************
+ * SMOOTH PURSUIT PARADIGM
+ ************************************/
+var tPursuit = {};
+function pursuitStart() {
+    $('#stimuli_fixation').hide();
+    var pos_possible = shuffle([
+        {x: "20%", y: "20%", tx: "80%", ty: "20%"},
+        {x: "20%", y: "20%", tx: "20%", ty: "80%"},
+        {x: "20%", y: "20%", tx: "80%", ty: "80%"},
+
+        {x: "80%", y: "20%", tx: "20%", ty: "20%"},
+        {x: "80%", y: "20%", tx: "20%", ty: "80%"},
+        {x: "80%", y: "20%", tx: "80%", ty: "80%"},
+
+        {x: "20%", y: "80%", tx: "20%", ty: "20%"},
+        {x: "20%", y: "80%", tx: "80%", ty: "20%"},
+        {x: "20%", y: "80%", tx: "80%", ty: "80%"},
+
+        {x: "80%", y: "80%", tx: "20%", ty: "20%"},
+        {x: "80%", y: "80%", tx: "80%", ty: "20%"},
+        {x: "80%", y: "80%", tx: "20%", ty: "80%"}
+    ]);
+    var pos = pos_possible[0];
+    $s = $('#stimuli_dot');
+    $s.css({
+        'top': pos.y,
+        'left': pos.x
+    });
+
+    $s.css({
+        'background-color': '#000'
+    });
+
+
+    data_current.task = 'pursuit';
+    data_current.x = pos.x;
+    data_current.y = pos.y;
+    data_current.condition = 'pursuit_' + pos.x + '_' + pos.y + '_' + pos.tx + '_' + pos.ty;
+
+    cam.recording = 1;
+    $s.show();
+    setTimeout(function() {
+        status = "pursuit_start";
+        $('#stimuli_dot').css({
+            'background-color': '#dd494b'
+        }).animate({ "left": pos.tx, "top": pos.ty },
+            2000,
+            'linear',
+        function() {
+            status = "pursuit_end";
+            setTimeout("endTrial();", 500);
+        });
+    }, 1500);
+}
+
+
+
+/************************************
+ * FREE VIEWING PARADIGM
+ ************************************/
+var tFreeview = {};
+
+
+tFreeview.stimuli = [];
+
+
+
+function process_freeview_image_file(){
+  console.dir("tFreeview");
+  console.dir(tFreeview);
+  if(trial_order == "random"){
+    tFreeview.stimuli = shuffle(tFreeview.stimuli);
+  }
+  
+  
+  if(left_side == "random"){
+    for(var i = 0; i < tFreeview.stimuli.length; i++){
+      [left_image,right_image] = shuffle([tFreeview.stimuli[i].image_1,
+                                          tFreeview.stimuli[i].image_2]);
+      tFreeview.stimuli[i].image_1 = left_image;
+      tFreeview.stimuli[i].image_2 = right_image;
+    }
+  } else if(left_side == "equal" | left_side == "counterbalance"){
+    // select indexes to swap left and right for half the indexes
+    // all indexes:
+    var indexes = Array.from({length:tFreeview.stimuli.length},(v,k)=>k);
+        indexes = shuffle(indexes);
+    
+    //assign the first half left to right
+    for(var i = 0; i < Math.floor(tFreeview.stimuli.length / 2); i++){          //this will only loop through half of the randomised indexes
+      var this_index = indexes[i];
+      var right_image = tFreeview.stimuli[this_index].image_1;
+      var left_image = tFreeview.stimuli[this_index].image_2;
+      tFreeview.stimuli[this_index].image_1 = left_image;
+      tFreeview.stimuli[this_index].image_2 = right_image;
+    }
+  } else if(left_side == "image_1"){
+    // do nothing
+  } else if(left_side == "image_2"){
+    for(var i = 0; i < Math.floor(tFreeview.stimuli.length / 2); i++){
+      var right_image = tFreeview.stimuli[i].image_1;
+      var left_image = tFreeview.stimuli[i].image_2;
+      tFreeview.stimuli[i].image_1 = left_image;
+      tFreeview.stimuli[i].image_2 = right_image;
+    }
+  } else {
+    alert("there's a problem in the 'left_side' column - fix this before testing.");
+  }
+};
+
+//check if the freeview file matches one of the stimuli files
+if(typeof(parent.parent.exp_json.all_stims[freeview_image_file]) !== "undefined"){
+  var freeview_contents = parent.parent.exp_json.all_stims[freeview_image_file];
+  var freeview_clean    = freeview_contents.map(function(row){
+    return row.filter(item => item !== null);
+  });
+  tFreeview.stimuli = Papa.parse(Papa.unparse(freeview_clean),{
+    header:true,
+    skipEmptyLines:true
+  }).data;
+  process_freeview_image_file();
+} else {
+  if(freeview_image_file.toLowerCase().indexOf("https://") == -1){                //i.e. isn't stored on dropbox or some other remote location
+    freeview_image_file = "../User/" + freeview_image_file;
+  } 
+  $.get(freeview_image_file,function(result){
+    tFreeview.stimuli = Papa.parse(result,{
+      header:true,
+      skipEmptyLines:true
+    }).data;
+    process_freeview_image_file();
+  });
+} 
+
+images_loaded = 0;
+
+function freeviewStart() {
+  
+  function freeview_loaded(left_image, right_image){
+    data_current.task = 'freeviewing';
+    data_current.x = $('#stimuli_img_left').css('left');
+    data_current.y = "0%";
+    data_current.condition = 'view_' + left_image + '_' + right_image;
+  
+    //wait until the image is loaded before proceeding
+    $("#stimuli_img_left")
+  
+    cam.recording = 1;
+    setTimeout("$('#stimuli_fixation').hide(); status = 'fixation_offset';", 1000);
+    setTimeout("freeviewShow();", 1500);
+  }
+  
+  document.body.style.cursor = 'none';
+  
+  
+  image_pair = tFreeview.stimuli.shift();
+  
+  [left_image,right_image] = [image_pair.image_1,image_pair.image_2];
+  
+  var baseline_time = new Date().getTime();
+  
+  
+  // Make sure the images are loaded before going past fixation
+  /////////////////////////////////////////////////////////////
+  
+  $("#stimuli_img_left").off("load");
+  $("#stimuli_img_right").off("load");
+  $("#stimuli_img_left").attr("src" , left_image);
+  $("#stimuli_img_right").attr("src" , right_image);
+  
+  images_loaded = 0;
+  
+  $("#stimuli_img_left").on("load",function(){
+    images_loaded = images_loaded + 1;
+    if(images_loaded == 2){
+      freeview_loaded(left_image, right_image);
+    }
+  });
+  
+  $("#stimuli_img_right").on("load",function(){
+    images_loaded = images_loaded + 1;
+    if(images_loaded == 2){
+      freeview_loaded(left_image, right_image);
+    }
+  });
+}
+
+function freeviewShow() {
+    status = 'stimulus_onset';
+    $('#stimuli_img_left').show();
+    $('#stimuli_img_right').show();
+    setTimeout("status = 'stimulus_offset'; endTrial();", stim_duration);
+}
+
+
+
+/************************************
+ * GENERATE AND SHOW HEATMAP
+ ************************************/
+function heatmap() {
+    // preprocess data for heatmap
+    var bins = []; // create bins and fill them
+    for (var y = 0; y < window.innerHeight; y++) {
+        for (var x = 0; x < window.innerWidth; x++) {
+            bins.push([x, y, 0]);
+        }
+    }
+    // sort fixations into bins and get max
+    var max = 0;
+    for (var i = 0; i < data[data.length - 1].raw.length; i++) {
+        var d = data[data.length - 1].raw[i];
+        var dx = Math.round(d.x);
+        var dy = Math.round(d.y);
+        var pos = (dy * window.innerWidth) + dx;
+        if (pos <= bins.length && pos >= 0) {
+            bins[pos][2] += 1;
+            if (bins[pos][2] > max) {
+                max = bins[pos][2];
+            }
+        } else {
+            console.log('dropped ' + pos);
+        }
+    }
+
+    // remove empty bins
+    var binsc = [];
+    for (var i = 0; i < bins.length; i++) {
+        if (bins[i][2] != 0) {
+            binsc.push(bins[i]);
+        }
+    }
+
+    // create heatmap
+    $('body').append("<canvas id=\"heatmap\"></canvas>");
+    $('#heatmap').attr('width', window.innerWidth);
+    $('#heatmap').attr('height', window.innerHeight);
+    heat = simpleheat('heatmap');
+    heat.resize();
+    heat.radius(30,50);
+    heat.max(max).data(binsc).draw();
+
+    $('#stimuli_img').show();
+}
+
+
+/**
+ * navigation
+ */
+var page = 1;
+var oldpage = -1;
+var d_consent = undefined;
+function navigation(direction) {
+  $('#message').hide();
+
+  $('#instruction_continue_text').html("&gt;");
+
+
+  
+	if (page == 2 && direction == 'continue') {
+    if (cam.initialized == 1) {
+      $('#instruction').fadeOut(1000);
+      setTimeout("prepareBlock();", 2000);
+    }
+  } else if (page == 2 && direction == 'pause') {
+    $('#instruction_continue').html("continue").css({'font-size': '1.7em'});
+    $('#instruction_2').find("h1").html('short pause (block ' + block_no + ' of ' + design.blocks.length + ")");
+    $('#setup_first').hide();
+    $('#setup_after').show();
+
+    $('#instruction').show(function() {
+      if (block_no == design.blocks.length) {
+        page++;
+      } else {
+        $('#instruction_2').fadeIn(300);
+        $('#webgazerVideoFeed').show();
+      }
+    });
+  } else if  (direction == 'continue') {
+    page++;
+  } else if (direction == 'back') {
+    page--;
+  }
+  page = page < 1 ? 1 : page;
+  page = page > $('.instruction_page').length ? $('.instruction_page').length : page;
+  page <= 1 ? $('#instruction_back').hide() : $('#instruction_back').show();
+  page >= $('.instruction_page').length ? $('#instruction_continue').hide() : $('#instruction_continue').show();
+  page >= 3 ? $('#instruction_back,#instruction_continue').hide() : "";
+  block_no > 0 ? $('#instruction_back').hide() : "";
+
+  if (oldpage != page) { // if we stay at the same page, we avoid unnecessary animations
+    $('.instruction_page').hide();
+    $('#instruction_'+page).fadeIn(300);
+  }
+  // start up webcam
+  if (page == 2 && cam.initialized == 0) {
+      loadWebgazer();
+  }
+  oldpage = page;
+}
+
+
+var cl;
+var t_start = new Date().getTime();
+$('document').ready(function() {
+  $('#stimulus').hide();
+  $('#calibration_dot').hide();
+  $('#setup_after').hide();
+  $('#instruction_message').hide();
+  $('#therest').hide();
+
+
+  $('#start_button').click(function() {
+    $(this).hide();
+    prepareBlock();
+  });
+
+  $('body').keypress(function(e) {
+    //e.preventDefault();
+    switch(e.keyCode) {
+
+    }
+  });
+
+  $('#instruction_continue').click(function() {
+    navigation('continue');
+  });
+
+  $('#instruction_back').click(function() {
+    navigation('back');
+  });
+
+  $( "#f_crowdflowerid" ).tooltip({
+    show: {
+      effect: "slideDown",
+      delay: 250
+    }
+  });
+
+
+  /*
+  $('#f_birthday').datepicker({
+      dateFormat: 'yy/mm/dd',
+      changeYear: true,
+      changeMonth: true,
+      yearRange: "-100:+0"
+  });
+  */
+  var select = $('#f_birthday');
+  for (var i=18;i <= 100; i++){
+    select.append('<option value="'+i+'">'+i+'</option>')
+  }
+
+  window.localStorage.clear();
+    
+  var ss = window.location.hash.substring(1);
+  $('#cf_reference,#asd_reference,#rub_reference,#cf_code').hide();
+  if (ss == "cf") { // crowdflower-reference
+    $('#cf_reference,#cf_code').show();
+  } else if (ss == "rub") {
+    $('#rub_reference').show();
+	} else {		
+    $('#asd_reference').show();
+	}
+
+  var is_chrome = navigator.userAgent.toLowerCase().indexOf('chrome') > -1;
+  var is_firefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
+  if (is_chrome || is_firefox) {
+    page = 0;
+    navigation('start');
+  } else {
+    $('#instruction').hide();
+    $('#message').html('Thank you very much for your interest in our study.<br /><br />Unfortunately, your browser is not supported by our website. To participate, you need either the browser "Google Chrome" or "Firefox".<br /><br />Do download one of these securely and free of charge, please follow one of these links: <a href="https://www.google.com/chrome/browser/desktop/" target="_blank">Google Chrome</a> or <a href="https://www.mozilla.org/de/firefox/new/" target="_blank">Mozilla Firefox</a>').show();
+  }
+});
+
+
+/**
+ function drawLoop() {
+    requestAnimFrame(drawLoop);
+    var p = webgazer.getCurrentPrediction();
+    if (p !== null) {
+        console.log(p);
+        $('body').append('<span class="p" style="top: '+p.y+'px; left: '+p.x+'px"></span>');
+        measurements++;
+    }
+    t = (new Date().getTime() - start)/1000;
+    cam.overlay.getContext('2d').clearRect(0,0,cam.width,cam.height);
+    if (cl.getCurrentPosition()) {
+        //console.log(cl.getCurrentPosition()[0]);
+        //cl.draw(overlay);
+    }
+}
+ */
+
+
+
+
+
+
+window.onbeforeunload = function() {
+  //webgazer.end(); //Uncomment if you want to save the data even if you reload the page.
+}
+</script>

@@ -1,0 +1,88 @@
+<!--
+This is from Borcsok, Fitzgibbins and Haffey (2020) investigation into gambling and alcohol behaviour
+-->
+<style>
+#face_img{
+  width:{{cue_width}};
+  height:{{cue_height}};
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+#instructions{
+  text-align: center;
+  font-size:20px;
+}
+#response_div{
+  margin: auto;
+  width: 100%;
+  padding: 10px;
+  text-align: center;
+}
+#submit_btn{
+  margin:0 auto;
+  display:none;
+}
+.response_btn{
+  margin:5px;
+  width:{{btn_width}};
+}
+</style>
+<img src="{{cue}}" id="face_img"/>  <!-- if you want to refer to a local image, you need to identify it's relative location to RunStudy.html -->
+<div id="response_div"></div>
+<div id="button_container">
+  <button class="btn btn-danger" onclick="Trial.submit()" id="submit_btn">Submit</button>
+</div>
+<input type="hidden" name="face_response" id="face_response"/>
+<script>
+no_stims = 0;
+resp_div_html = "";
+resp_upper    = 0;
+responses_array =   ["{{responses_1}}",
+                     "{{responses_2}}",
+                     "{{responses_3}}"];
+instruction_array = ["{{instruct_1}}",
+                     "{{instruct_2}}",
+                     "{{instruct_3}}"];
+
+row_classes = ["primary",
+               "info",
+               "secondary"];
+
+for(var i = 0; i < 3; i++){
+  responses = responses_array[i];
+  if(responses == ""){
+    break;
+  }
+  no_stims++;
+  
+  responses = responses.split("|");
+  resp_div_html += "<h3 class='text-" + row_classes[i] + "'>" +  instruction_array[i] + "</h3>";
+  resp_div_html += "<div style='margin:10px'>";
+  resp_div_html += responses.map(function(response){
+    return "<button name='face_rating_" + (i+1) + "' class='btn btn-" + row_classes[i] + " response_btn'>" + response + "</button>";
+  }).join("");
+  resp_div_html += "<input type='hidden' id='face_response_" + (i+1) + "' name='face_response_" + (i+1) + "'>";
+  resp_div_html += "</div>";
+};
+
+$("#response_div").html(resp_div_html);
+$(".response_btn").on("click",function(){
+  var response_id = $(this).attr("name").replace("rating","response");
+  $("#" + response_id).val(this.innerHTML);
+  $('[name="' + $(this).attr("name") + '"]').removeClass("btn-danger");
+  $(this).addClass("btn-danger");
+  check_responses();
+});
+function check_responses(){
+  valid_responses = 0;
+  for(var i = 1; i < no_stims + 1; i++){
+    if($("#face_response_" + i).val() !== ""){
+      valid_responses++;
+    }
+  }
+  if(valid_responses == no_stims){
+    $("#submit_btn").css("display", "block");
+  }
+}
+</script>

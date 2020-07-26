@@ -1,0 +1,1120 @@
+<!--
+
+/*
+* Mousetracking code for running experiments on Collector.
+* This code should also hopefully be helpful for running mousetracking without Collector
+* Stimuli in the default version of this based on videos by Dr. Robrecht van der Wel
+* Authors: Dr. Anthony Haffey, Dr Kristian Tempelmans Plat, Prasannajeet Mane
+*/
+
+-->
+<style>
+/* elements by class */
+.movie_area{
+	position:      absolute;
+	width:         1024px;
+	height:        768px;
+	top:           1px;
+	left:          0px;
+	z-index:       4;
+}
+
+.start_tracking{
+	position:      absolute;
+	top:           726px;
+	left:          502px;
+	z-index:       5;
+	border-style:  solid;
+	border-color:  red;
+	width:         20px;
+	height:        20px;
+	border-radius: 10px;
+	display:       none;
+}
+
+.start_video{
+  position:         absolute;
+  top:              726px;
+  left:             502px;
+	z-index:          5;
+	border:           none;
+	height:           20px;
+	width:            20px;
+	display:          none;
+	border-radius:    50%;
+	background-color: green;
+}
+
+/* elements by id */
+
+#background{
+	position: absolute;
+	top:      1px;
+	width:    1024px;
+	height:   768px;
+	z-index:  2;
+}
+#canvas{
+  position:     absolute;
+	top:          1px;
+	left:         1px;
+  border-style: solid;
+  border-color: black;
+  height:       1024px;
+  width:        768x;
+}
+#correct_button{
+	position: absolute;
+	top:      400px;
+	left:     437px;
+	z-index:  6;
+}
+#error_button{
+	position: absolute;
+	top:      400px;
+	left:     390px;
+	z-index:  6;
+}
+#error_feedback{
+	position: absolute;
+	top:      234px;
+	left:     362px;
+	width:    300;
+	height:   300px;
+	z-index:  7;
+	display:  none;
+}
+#loading_vid{
+  position: absolute;
+	margin:   auto;
+	width:    400px;
+	top:      50%;
+}
+#pic_default{
+	position: absolute;
+	width:    1024px;
+	height:   768px;
+	z-index:  2;
+}
+#prepare_screen{
+	position: absolute;
+	top:      1px;
+	left:     1px;
+	width:    1024px;
+	height:   768px;
+}
+#processing_div{
+  display:  none;
+}
+#response_area{
+	position: absolute;
+  width:    1024px;
+  height:   768px;
+	top:      1px;
+	left:     1px;
+	z-index:  1;
+}
+#response_area_target{
+	position: absolute;
+  width:    1024px;
+  height:   768px;
+	top:      1px;
+	left:     1px;
+	z-index:  2;
+}
+#resp_left{
+	position:         absolute;
+	width:            190px;
+	height:           70px;
+	top:              128px;
+	left:             70px;
+	z-index:          5;
+	background-color: transparent;
+	border:           none;
+}
+#resp_right{
+	position:         absolute;
+	width:            190px;
+	height:           70px;
+	top:              128px;
+	left:             766px;
+	z-index:          5;
+	background-color: transparent;
+	border:           none;
+}
+#rotated_canvas{
+  position:     relative;
+  border-style: solid;
+  border-color: black;
+  height:       1024px;
+  width:        768px;
+}
+#too_slow_button{
+	position: absolute;
+	top:      400px;
+	left:     390px;
+	z-index:  6;
+}
+#too_slow_feedback{
+	position: absolute;
+	top:      234px;
+	left:     362px;
+	z-index:  7;
+	display:  none;
+}
+#trial_content_div{
+  position: absolute;
+  top:      1;
+  bottom:   0;
+  left:     0;
+  right:    0;
+  margin:   auto;
+  height:   768px;
+  width:    1024px;
+  position: relative;
+}
+</style>
+
+
+<div id="trial_content_div">
+  <span id="replaceable_movie_span"></span>
+  <input id="resp_left"        type="button"                       value = ""                                                           style="display:none">
+  <input id="resp_right"       type="button"                       value = ""                                                           style="display:none">
+  <input id="too_slow_button"  type="button" class="process_trial" value = "Please respond faster next time"                            style="display:none">
+  <input id="error_button"     type="button" class="process_trial" value = "Please click on the ball next time"                         style="display:none">
+  <input id="correct_button"   type="button" class="process_trial" value = "Click here to continue"                                     style="display:none">
+  <input id="RequiredResponse" type="text"                         value = "{{correctid}}"                      name="RequiredResponse" style="display:none">
+    			
+  <div id="prepare_screen">
+  	<img id="response_area"         src = "{{pic_now}}"       style = "display:none">
+  	<img id="response_area_target"  src = "{{pic_target}}"    style = "display:none">
+  	<img id="pic_default"           src = "{{pic_default}}"   style = "display:none">
+  	<img id="background"            src = "{{background}}"    style = "display:none">
+  </div>
+  
+  <div id="error_feedback">
+    <img id="ErrorImg"   src = "../User/Stimuli/mt_exemplar/Errorimg.png">
+  </div>
+    
+  <div id="too_slow_feedback">
+    <img id="TooSlowImg" src = "../User/Stimuli/mt_exemplar/TooSlow.png?dl=0">
+  </div>
+    
+  <textarea name="x_array" style="display:none" id="x_array_textarea"></textarea>
+  <textarea name="y_array" style="display:none" id="y_array_textarea"></textarea>
+    
+  <textarea name="ActualResponseId"    id="ActualResponseId"    style="display:none"></textarea>
+  <textarea name="correct_response_id" id="correct_response_id" style="display:none"></textarea>
+  <!-- ActualResponse will be stored as follows: 0 = too slow; 1 = left; 2 = right; -->
+  <!-- CorrectResponse will be stored as follows: 1 = should be left; 2 = should be right -->
+    
+  <input type="hidden" name="time_to_start_tracking" id="start_tracking_input">
+</div>   
+
+<div id='loading_vid'>Loading the trial... If it doesn't load within 30 seconds the task will try to reload the stimuli. 
+                      If it doesn't load within a couple of minutes, please contact the researcher who recruited you. 
+                      DO not refresh the page! </div>
+
+<input type="hidden" name="error_message"     id="error_message">
+<input type="hidden" name="trial_accuracy"    id="trial_accuracy">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootbox.js/4.4.0/bootbox.min.js"></script>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+
+
+<script>
+CorrectSide          = "{{correctid}}";
+skip_processing_view = "{{skip_line_display}}";
+phase_type           = "{{phase}}";
+shuffle_type         = "{{shuffle 1}}";
+background_img       = "{{background}}";
+video_src            = "{{movie}}";
+
+draw_trial();
+
+var viewportWidth  = $("body").innerWidth();
+var viewportHeight = $("body").innerHeight();
+
+var response_window_timeout;
+
+Tracker_stopper             = 1;                                                // to stop attempts at tracking before the task is ready.
+background_and_video_loaded = 0;
+
+if (CorrectSide == "Left") {
+  CorrectResponseVal = 1;
+} else if (CorrectSide == "Right") {
+  CorrectResponseVal = 2;
+}
+
+$("#correct_response_id").val(CorrectResponseVal);
+
+timed_check_of_video_loading = setInterval (function(){
+  if(background_and_video_loaded !== 2){
+    bootbox.alert("video slow to load, trying to reload it");
+    draw_trial();
+  } else {
+    clearInterval(timed_check_of_video_loading);
+  }
+},30000);
+
+/*
+* Functions
+*/
+function auto_start_tracking(){
+  clicked_start = 1;
+  $(".movie_area").hide();
+  $(".start_tracking").hide();
+  
+  if (Slow_state == 0){
+    $("#resp_left").show();
+    $("#resp_right").show();
+  }
+  
+  Tracker_stopper         = 0;
+  x_array                 = [];
+  y_array                 = [];
+  baseline_time           = (new Date()).getTime();
+  timestamp_array         = [];
+  response_window_timeout = setTimeout(response_window,3000);
+  $(".start_tracking_input").val(baseline_time-post_video_baseline_time);
+  
+  $("#background, #resp_left, #resp_right,#prepare_screen").mousemove(function(event){
+    var _mouseX = event.clientX;
+    var _mouseY = event.clientY;
+    var offset = $(".movie_area").offset(); 
+    _mouseX -= offset.left;
+    _mouseY -= offset.top;
+    new_x = _mouseX;
+    new_y = _mouseY;
+    x_array.push(_mouseX);
+    y_array.push(_mouseY);
+    this_timestamp = (new Date()).getTime()-baseline_time;
+    timestamp_array.push(this_timestamp);
+    $("#x_array_textarea").val(x_array);
+    $("#y_array_textarea").val(y_array);
+    if(new_y < 686 & changed_pic == 0){                                         //this is 50px above the midpoint of the .start_tracking button.
+      changed_pic = 1;  
+      $('#response_area_target').show();
+    }
+  });
+};
+
+function draw_movie(){
+  var video_html = '<video id="movie_area" class="movie_area" style = "display:none">'+
+                      '<source src="{{movie}}" type="video/mp4">'+
+                       ' Your browser does not support the video tag.'+
+                    '</video>'+
+                    '<input id="start_video"    class="start_video"     type="button" style="display:none">'+ 
+                    '<input id="start_tracking" class="start_tracking"  type="button" style="display:none">';
+  $("#replaceable_movie_span").html(video_html);
+
+  $(".movie_area").on('loadstart', function() { 
+    if(background_and_video_loaded > 0){
+      background_and_video_loaded = 2;
+      $("#loading_vid").hide();
+      $("#background").show();
+      $(".start_video").show();
+    } else {
+      background_and_video_loaded = 1;
+    }
+  })
+  .on('error', function() { 
+    console.log("error loading movie");
+  });
+  myVideo = document.getElementById("movie_area");
+}
+
+
+function draw_trial(){
+  draw_movie();
+  $(".start_video").on("click", function(){
+    function playPause() { 
+      if (myVideo.paused) {
+        myVideo.play(); 
+      } else {
+        myVideo.pause(); 
+      }
+    }
+    changed_pic = 0;
+    clicked_start = 0;
+    $("#background").hide();
+    $(".start_tracking").hide();
+    $(".start_video").hide();
+    $("#response_area").hide();
+    $("#response_area_target").hide();                                          //for quick movement specifically
+    $(".movie_area").show();
+    playPause();
+    $('.movie_area').show().trigger("play").bind('ended', function () {
+      post_video_baseline_time = (new Date()).getTime();
+      $('.start_tracking').show();
+      $("#response_area").show();
+      $(".movie_area").hide();
+    });
+  	Slow_state = 0;
+  	TimeLimit_stopper = 0;
+  });
+  $('.start_tracking').on('click', function(){
+    auto_start_tracking();
+  });    
+}
+
+function participant_error(long_message,short_error){
+  clearTimeout(response_window_timeout);                                        // cancel timer 
+  if(phase_type.toLowerCase().indexOf("prac") !== -1){
+    bootbox.alert ("Restarting practice trial");
+    $("#too_slow_feedback").hide();                                             //only necessary for the too slow click trials
+    $("#too_slow_button").hide();                                               //only necessary for the too slow click trials
+    $("#error_button").hide();                                                  //only necessary for wrong trials
+    draw_trial();
+  } else {
+    bootbox.alert("Moving on to next trial.", function(){                       //these errors always have mouse co-ordinates, so need to be reported before processing the trial.
+      process_trial_function(short_error);
+    }); 
+  }
+  bootbox.alert(long_message);
+}
+
+function process_trial_function(error_message){
+  $("#error_message").val(error_message);
+    
+
+  /* Trajectory start and end */
+
+  start_x = parseFloat($(".start_tracking").css("left").replace("px","")) + 
+            parseFloat($(".start_tracking").css("width").replace("px",""))/2; 
+  start_y = parseFloat($(".start_tracking").css("top").replace("px","")) + 
+            parseFloat($(".start_tracking").css("height").replace("px",""))/2;
+    
+  if(CorrectSide == "Left"){                                                  // end_x and end_y depend on the trial type (whether it ends on the left or right)
+    end_x   =  parseFloat($("#resp_left").css("left").replace("px",""));    
+    end_y   =  parseFloat($("#resp_left").css("top").replace("px","")) + 
+               parseFloat($("#resp_left").css("height").replace("px",""));
+  } else {                                                                    // assume it is right
+    end_x   =  parseFloat($("#resp_right").css("left").replace("px","")) + 
+               parseFloat($("#resp_left").css("width").replace("px",""));   
+    end_y   =  parseFloat($("#resp_right").css("top").replace("px","")) + 
+               parseFloat($("#resp_left").css("height").replace("px",""));
+  }
+    
+  /* Line properties */                                                       
+  m       = (start_y - end_y)/(end_x-start_x);                                //y = mx+c
+  c       = start_y - m*start_x;
+  
+  auc_object = {
+    calculate_x_gap: function(y_value, 
+                              x_value){
+      quickest_x = (y_value-c)/m;
+      return (quickest_x-x_value);
+    }
+  }
+  x_gap_array = [];
+  y_gap_array = [];
+    
+  /* Trajectory rotation */
+
+  // rotate here
+  var deltaX = end_x - start_x;
+  var deltaY = start_y - end_y;
+  var rad = Math.atan2(deltaY, deltaX); // In radians
+  var deg = rad * (180 / Math.PI);
+  
+  [rot_end_x,rot_end_y] = rotate(start_x,start_y,end_x,end_y,-deg);
+  rotated_x = [];
+  rotated_y = [];
+    
+    if(typeof(parent.x_array) !== "undefined"){
+      for(i=0;i<parent.x_array.length;i++){
+        
+        [new_x_val,new_y_val] = rotate(start_x,start_y,parent.x_array[i],parent.y_array[i],-deg);
+        rotated_x.push(new_x_val);
+        rotated_y.push(new_y_val);
+      }
+      
+      parent.x_line_start = start_x;
+    	parent.x_line_end = rot_end_x;
+    	parent.y_line_start = start_y;
+    	parent.y_line_end = rot_end_y;
+      
+      canvas.appendChild(createLine(start_x, start_y, end_x, end_y,"black"));
+      rotated_canvas.appendChild(createLine(start_x, start_y, rot_end_x, rot_end_y,"black"));
+      
+      // process rotated data - identify y-values that are equidistant on the x-axis //
+      
+      // use rounded up values
+      for(i=0;i<rotated_x.length;i++){
+        rotated_x[i]=Math.ceil(rotated_x[i]);
+        rotated_y[i]=Math.ceil(rotated_y[i]);
+      }
+  	
+      /* Filling of gaps by interpolation */
+       	
+      every_y_array=[];
+      every_x_array=[];
+      every_timestamp_array=[];
+      
+      for(i=0;i<rotated_x.length-1;i++){
+        var x_gap_size= rotated_x[i+1]-rotated_x[i];
+        every_y_array.push(rotated_y[i]);
+        every_x_array.push(rotated_x[i]);
+        every_timestamp_array.push(parent.timestamp_array[i]);
+      
+        if(x_gap_size > 1){
+          for(j=0;j<x_gap_size-1;j++){
+            new_x_value = rotated_x[i]+1+j;
+            new_y_value = rotated_y[i]+(1+j)*(rotated_y[i+1]-rotated_y[i])/x_gap_size;
+      	  new_time_value = parent.timestamp_array[i]+(1+j)*(parent.timestamp_array[i+1] - parent.timestamp_array[i])/x_gap_size;
+            every_x_array.push(new_x_value);
+            every_y_array.push(new_y_value);
+      	  every_timestamp_array.push(new_time_value);
+          }
+        }
+        
+      	else if(x_gap_size < -1){
+      		var inverted_gap_size = x_gap_size*(-1);
+      		for(j=0;j<inverted_gap_size-1;j++){
+      			new_x_value = rotated_x[i]-1-j;
+      			new_y_value = rotated_y[i]-(1+j)*(rotated_y[i+1]-rotated_y[i])/x_gap_size;
+      			new_time_value = parent.timestamp_array[i]+(1+j)*(parent.timestamp_array[i+1] - parent.timestamp_array[i])/inverted_gap_size;
+      			every_x_array.push(new_x_value);
+      			every_y_array.push(new_y_value);
+      			every_timestamp_array.push(new_time_value);
+      		}
+      	}
+      } 
+  
+      // Add last value of rotated_x and rotated_y to every_x_array and every_y_array, respectively, as these values were not included in the iterations above
+      every_x_array.push(rotated_x[rotated_x.length-1]);
+      every_y_array.push(rotated_y[rotated_y.length-1]);
+      every_timestamp_array.push(parent.timestamp_array[parent.timestamp_array.length-1]);
+      
+      /* Get reaction time */
+          
+      // X, Y & T arrays; RT (corrected for the fact that timepoint 1 in timestamp_array has a value of 1 instead of 0)
+      // But not sure if this offset of 1 ms is also reflected in final timepoint
+      ReactionTime = parent.timestamp_array[parent.timestamp_array.length-1];
+      console.dir(ReactionTime);
+      $("#RT").val(ReactionTime);
+      
+  	/* Average Y distance calculation */
+  	
+      var y_sum = 0;
+      for( var i = 0; i < every_y_array.length; i++ ){
+          y_sum += every_y_array[i];
+      }
+      
+      // y_avg is now calculated with difference between horizontal line and recorded Y value
+      // instead of with absolute y values only
+      
+      var y_avg = rot_end_y - (y_sum/every_y_array.length);
+      $("#y_average_dist").val(y_avg);
+      
+      
+      // calculate standard deviation 
+      y_stdev = calculate_sd(every_y_array);
+      
+      $("#y_stdev_dist").val(y_stdev);
+      
+      for(i=end_y;i<start_y;i++){
+        y_gap_array[i-end_y]=i;
+      }
+      for(i=end_y;i<start_y;i++){
+        y_gap_array[i-end_y]=i;
+      }
+      
+      // add coloring in to convey time
+      
+      // based on Madox on http://stackoverflow.com/questions/4270485/drawing-lines-on-html-page
+      
+      
+  /* calculate maximum deviation from curve */
+      //Max_dev is the highest value (e.g. would pick 20 instead of -100)
+      //Max_dev is the highest deviation from 0 and can be either positive or negative
+      
+      var y_diff = [];
+      for(var i=0; i<every_y_array.length; i++) {
+      	y_diff.push(rot_end_y - every_y_array[i]);
+      }
+      
+      var diff_max = Math.max.apply(Math,y_diff);
+      var diff_min = Math.min.apply(Math,y_diff);
+      
+      var abs_diff_max = Math.abs(diff_max);
+      var abs_diff_min = Math.abs(diff_min);
+      
+      var Max_dev = [];
+      
+      if ((abs_diff_max - abs_diff_min) > 0){
+          Max_dev.push(diff_max);
+      }
+      else if ((abs_diff_max - abs_diff_min) < 0) {
+      	Max_dev.push(diff_min);
+      }
+      else if ((abs_diff_max - abs_diff_min) == 0) {
+      	Max_dev.push(0);
+      }
+      
+      
+   /* Calculate number of X flips and Y flips, based on original, non-rotated trajectory */
+      
+      // Currently, also a 'jitter count' is kept. This saves how many times a flip occurs for just one value (e.g. x_direction_memory: 1,1,1,1,1,-1,1,1,1)
+      //   This is most probably an artefact, caused by 1. miniscule hand movement 2. rough surface
+      //   3. most likely: issue with updating of picture when trajectory crosses the 600 px line.
+      // 	 'filtered_x_flips' and 'filtered_y_flips' solve this issue, but are currently not displayed in the post-trial response boxes.
+      //   Another possible issue: length of arrays and delta_arrays not the same. But this could be because delta_arrays probably begins at the first actual change.
+      
+      x_flips = 0;
+      filtered_x_flips = 0;
+      x_delta_array = [];
+      x_direction_memory = [];
+      x_jitter_count = 0;
+      y_flips = 0;
+      filtered_y_flips = 0;
+      y_delta_array = [];
+      y_direction_memory = [];
+      y_jitter_count = 0;
+      
+      for (var i=1; i<parent.x_array.length; i++)  {
+      x_delta_array.push(parent.x_array[i] - parent.x_array[i-1]);}		
+      
+      for (var i=0; i<x_delta_array.length; i++)   {
+      	if (x_delta_array[i] == 0) {
+      		x_direction_memory.push(x_direction_memory[i-1]);}
+      	else if (x_delta_array[i] > 0) {
+      		x_direction_memory.push(1);}
+      	else if (x_delta_array[i] < 0)  {
+      		x_direction_memory.push(-1);}
+      	}
+      
+      for (var i=1; i<x_direction_memory.length; i++)   {
+      	if ((x_direction_memory[i] * x_direction_memory[i-1]) == -1) {
+      		x_flips += 1;}
+      	if ((x_direction_memory[i] != x_direction_memory[i-1]) && (x_direction_memory[i] != x_direction_memory[i+1]))
+      		{x_jitter_count += 1;}
+      	} 
+      
+      if (x_jitter_count > 0) {
+      filtered_x_flips = x_flips - (2*x_jitter_count);}
+      
+      
+      for (var i=1; i<parent.y_array.length; i++)  {
+      y_delta_array.push(parent.y_array[i] - parent.y_array[i-1]);}		
+      
+       for (var i=0; i<y_delta_array.length; i++)   {
+      	if (y_delta_array[i] == 0) {
+      		y_direction_memory.push(y_direction_memory[i-1]);}
+      	else if (y_delta_array[i] > 0) {
+      		y_direction_memory.push(1);}
+      	else if (y_delta_array[i] < 0)  {
+      		y_direction_memory.push(-1);}	
+       }
+      
+        for (var i=1; i<y_direction_memory.length; i++)   {
+      		if (((y_direction_memory[i] * y_direction_memory[i-1]) == -1) && (y_direction_memory[i-1] != y_direction_memory[i+1])) {
+      		y_flips += 1;}
+      		if ((y_direction_memory[i] != y_direction_memory[i-1]) && (y_direction_memory[i] != y_direction_memory[i+1]))
+      		{y_jitter_count += 1;}
+      	} 
+      	
+      if (y_jitter_count > 0) {
+          filtered_y_flips = y_flips - (2*y_jitter_count);
+      }
+  	
+  
+      $("#X_flips").val(x_flips);
+      // Keep in mind that this includes jitter.
+      // Also, x_flips and y_flips are calculated based on the rotated trajectory.
+      // An 'ideal' curve in a False_participant trial would show 1 x_flip in the original trajectory, but 0 x_flips in the rotated trajectory.
+      $("#Y_flips").val(y_flips);
+      
+  /* Array storage */
+  
+      // Store x, y and timestamp values as response
+      $("#y_diff_array_textarea").val(y_diff);
+      $("#x_val_array_textarea").val(every_x_array);
+      $("#timestamp_textarea").val(parent.timestamp_array);
+  	$("#every_timestamp_textarea").val(every_timestamp_array);
+      
+      // X-array corrected for its starting position, i.e. all values reduced by x[0]
+      
+      x1_val_array = [];
+      for (i=0;i<every_x_array.length;i++){
+      	x1_val_array[i] = every_x_array[i]-every_x_array[0]+1
+      }
+      $("#x1_val_array_textarea").val(x1_val_array);
+     
+  
+   /* Trajectory length */
+   
+      // Calculate length of trajectory, by using Pythagorean theorem
+       // Note: the minus in these for-loops is justified, as calculation of dx and dy should stop at the penultimate value
+       // Due to zero-based indexing, last iteration should work with i = length-2 and i = length-1
+      
+      every_x_delta_array = [];
+      every_y_delta_array = [];
+      
+      for (var i=0;i<every_x_array.length-1;i++){
+      	every_x_delta_array[i] = every_x_array[i+1] - every_x_array[i]
+      }
+      
+      for (var i=0;i<every_y_array.length-1;i++){
+      	every_y_delta_array[i] = every_y_array[i+1] - every_y_array[i]
+      }
+      
+       // Array with length of hypotenuses: for every increase in x, get the difference in y and calculate the length of the hypotenuse
+      Pyt_array = [];
+      
+      for (var i=0;i<every_x_delta_array.length;i++){
+      	dx = every_x_delta_array[i];
+      	dy = every_y_delta_array[i];
+      	squared_dx = Math.pow(dx,2);
+      	squared_dy = Math.pow(dy,2);
+      	squared_hyp = squared_dx + squared_dy;
+      	hypotenuse = Math.sqrt(squared_hyp);
+      	Pyt_array[i] = hypotenuse;
+      }
+      	
+      
+      $("#d_length_array_textarea").val(Pyt_array);
+      
+      Traj_length_val = 0;
+      
+      for (i=0;i<Pyt_array.length;i++){
+      	Traj_length_val += Pyt_array[i];
+      }
+      
+      $("#Traj_length").val(Traj_length_val);
+      
+   /* AUC calculation */
+   
+      var area = [];
+      var AUC_above = 0;
+      var AUC_below = 0;
+      
+      for (i=0;i<every_x_array.length-1;i++){
+      	
+      	if (every_x_array[i+1] == every_x_array[i]){
+      		area[i] = 0; 
+      	}	else if (every_x_array[i+1] != every_x_array[i]){
+      		area[i] = (y_diff[i+1] + y_diff[i])/2;
+      		if (area[i] > 0){
+      			AUC_above += area[i];
+      		}	else if (area[i] < 0){
+      			AUC_below += area[i];
+    	    }
+        }
+      }
+  	
+  	// Store AUC_above and AUV_below correctly based on target position
+  	 if( CorrectSide == "Left"){
+          real_AUC_above = AUC_below;
+          real_AUC_below = AUC_above;
+  		
+  		AUC_above = real_AUC_above * -1;
+  		
+  		if (AUC_above != 0){
+  		AUC_above *-1;}
+  		
+  		AUC_below = real_AUC_below * -1;
+  		if (AUC_below != 0){
+  		AUC_below *-1;}
+      }
+      
+      // This part is needed to summate AUC_above and AUC_below (makes AUC_below positive)
+      var rectified_below = AUC_below * -1;
+      var total_AUC = AUC_above + rectified_below;
+      
+      var area_sum = 0;
+      for (var i=0;i<area.length;i++){
+      	area_sum += area[i];
+      }
+      
+  	if( CorrectSide == "Left"){
+  	area_sum = area_sum * -1;}
+  	
+      $("#AUC_array_textarea").val(area);
+      $("#AUC_diff").val(area_sum);
+      $("#AUC").val(total_AUC);
+      $("#AUC_above_val").val(AUC_above);
+      $("#AUC_below_val").val(AUC_below);
+      
+      $("#Max_dev").val(Max_dev);
+      
+  /* store data for final processing */
+      
+  	trial_data = {},
+  
+      parent.uber_data.x_arrays.push(every_x_array);
+      trial_data.x_arrays = [every_x_array];
+      
+      if( CorrectSide == "Left"){
+          var y_array = y_diff.map(function(x){ return x*-1 });
+          parent.uber_data.y_arrays.push(y_array);
+          trial_data.y_arrays  =[y_array];
+      } else {
+          parent.uber_data.y_arrays.push(y_diff);
+          trial_data.y_arrays  = [y_diff];
+      }
+      
+    parent.uber_data.mean_y.push(y_avg);
+  	parent.uber_data.std_y.push(y_stdev);
+  	parent.uber_data.max_dev.push(Max_dev);
+  	parent.uber_data.RT.push(ReactionTime);
+  	parent.uber_data.AUC_total.push(total_AUC);
+  	parent.uber_data.AUC_diff.push(area_sum);
+  	parent.uber_data.AUC_above.push(AUC_above);
+  	parent.uber_data.AUC_below.push(AUC_below);
+  	parent.uber_data.x_flips.push(x_flips);
+  	parent.uber_data.y_flips.push(y_flips);
+  	parent.uber_data.condition.push(this_condition);
+    parent.uber_data.timestamps.push(every_timestamp_array);  
+  	parent.uber_data.traj_length.push(Traj_length_val);
+  	console.dir(parent.uber_data);
+  	parent.uber_data.shuffle_type.push(shuffle_type);
+  
+  	// save trial by trial
+  	trial_data.mean_y=[y_avg];
+  	trial_data.std_y=[y_stdev];
+  	trial_data.max_dev=[Max_dev];
+  	trial_data.RT=[ReactionTime];
+  	trial_data.AUC_total=[total_AUC];
+  	trial_data.AUC_diff=[area_sum];
+  	trial_data.AUC_above=[AUC_above];
+  	trial_data.AUC_below=[AUC_below];
+  	trial_data.x_flips=[x_flips];
+  	trial_data.y_flips=[y_flips];
+  	trial_data.condition=[this_condition];
+    trial_data.timestamps=[every_timestamp_array];  
+  	trial_data.traj_length=[Traj_length_val];
+  	trial_data.shuffle_type=[shuffle_type];
+  	
+  	
+  	if(typeof(parent.User_Data) == "undefined" | parent.User_Data.Username == "Admin:Simulator"){
+      var this_username = "simulator";
+      var experiment_name = "simulator_blah";
+    } else {
+      var this_username   = parent.User_Data.Username;
+      var experiment_name = parent.User_Data.Exp_Name;
+    }
+      
+    // need to add experiment name
+    var trial_no = parent.Collector_Experiment.data.globals.position;
+    //var trial_no = parent.uber_data.mean_y.length; //arbitrary which variable from parent.uber_data is used
+    
+    Trial.submit();
+    //ajax_json_read_write(experiment_name+"_"+this_username+"_"+"TrialNo_"+trial_no+".json",JSON.stringify(trial_data),"Write","json");
+  }
+}
+
+function response_window() {
+	if (TimeLimit_stopper == 0){
+		$("#too_slow_feedback").show();
+		Tracker_stopper = 1;
+		$("#too_slow_feedback").delay(3000).hide(0);
+		$("#too_slow_button").show();
+		$("#trial_accuracy").val(0);
+		$("#resp_left").hide();
+		$("#resp_right").hide();
+		Slow_state = 1;
+		ActualResponseVal = 0;
+		$("#ActualResponseId").val(ActualResponseVal);
+		var message = "Too slow!";
+		participant_error(message,"slow_click");
+	}
+}
+
+
+/*
+* Actions by id
+*/
+$("#background").on('load', function() {
+  if(background_and_video_loaded == 1){
+    background_and_video_loaded = 2;
+    $("#loading_vid").hide();
+    $("#background").show();
+
+    if(response_area.complete == 0){
+      $("#response_area").on("load",function(){
+        $(".start_video").show();
+      })
+    } else {
+      $(".start_video").show();
+    }
+  } else {
+    background_and_video_loaded = 1;
+  }
+}).on('error', function() { 
+  console.log("error loading image"); 
+});
+$('#resp_left').on('click', function(){
+  ActualResponseVal = 1;
+  TimeLimit_stopper = 1;
+  Tracker_stopper = 1;
+  $("#resp_left").hide();
+  $("#resp_right").hide();
+  $("#ActualResponseId").val(ActualResponseVal);
+    
+	if (CorrectSide == "Left") {
+	  $("#trial_accuracy").val(1);
+    $("#correct_button").show();
+  } else if (CorrectSide == "Right") {
+    $("#trial_accuracy").val(0);
+    $("#error_button").show();
+    $("#error_feedback").show(0);
+    $("#error_feedback").delay(3000).hide(0);
+    participant_error("Incorrect response. Please click on the box with the ball in it.",
+                      "incorrect_response");
+	}
+});
+  
+$('#resp_right').on('click', function(){
+	ActualResponseVal = 2;
+  TimeLimit_stopper = 1;
+  Tracker_stopper = 1;
+  $("#resp_left").hide();
+  $("#resp_right").hide();
+  $("#ActualResponseId").val(ActualResponseVal);    
+	
+	if (CorrectSide == "Left") {
+    $("#trial_accuracy").val(0);
+    $("#error_button").show();
+    $("#error_feedback").show(0);
+    $("#error_feedback").delay(3000).hide(0);
+    participant_error("Incorrect response. Please click on the box with the ball in it.",
+                      "incorrect_response");
+	}	else if (CorrectSide == "Right") {
+    $("#trial_accuracy").val(1);
+    $("#correct_button").show();
+	}
+});
+
+/*
+* Actions by class
+*/
+$(".process_trial").on("click",function(){
+  $("#trial_content_div").hide();
+  if(skip_processing_view.toLowerCase() == "no"){
+    $("#processing_div").hide();
+	}
+  process_trial_function();
+});
+</script>
+
+<!-- 
+  /*
+  * Analysis 
+  */
+-->
+<div id="processing_div">
+  <input id="submit" type="submit" value="Finish trial" readonly>
+  <table>
+    <tr>
+      <td>
+        <div id="canvas"></div>
+      </td>
+      <td>
+        <div id="rotated_canvas"></div>
+      </td>
+    </tr>
+  </table>
+  <input type="button" value="Create picture" id="create_picture" onclick="draw_picture()">
+  <div id="data_table">
+    <table width = "1100">
+      <tr>
+        <td><p>Mean Y distance </p></td>
+        <td><input type="text" name="y_average_dist" id="y_average_dist" readonly></td>
+        <td><p>SD for Y distance</p> </td>
+        <td><input type="text" name="y_stdev_dist" id="y_stdev_dist" readonly> </td>
+      </tr>
+
+      <tr>
+        <td><p>Maximum deviation</p></td>
+        <td><input type="text" name="Max_dev" id="Max_dev" readonly></td>
+        <td><p>RT</p></td>
+        <td><input type="text" name="RT" id="RT" readonly></td>
+      </tr>
+      
+      <tr>
+      <td><p>AUC above hor line in pixels</p></td>
+        <td><input type="text" name="AUC_above" id="AUC_above_val" readonly></td>
+      <td><p>AUC below hor line in pixels</p></td>
+        <td><input type="text" name="AUC_below" id="AUC_below_val" readonly></td>
+      </tr>
+      
+      <tr>
+      <td><p>AUC (Above-Below)</p></td>
+        <td><input type="text" name="AUC_diff" id="AUC_diff" readonly></td>
+      <td><p>Overall AUC in pixels</p></td>
+        <td><input type="text" name="AUC" id="AUC" readonly></td>
+      </tr>
+      
+      <tr>
+        <td><p>Raw timestamp array</p></td>
+        <td><textarea name="timestamp_textarea" id="timestamp_textarea" readonly></textarea></td>
+        <td><p>Full timestamp array</p></td>
+        <td><textarea name="every_timestamp_textarea" id="every_timestamp_textarea" readonly></textarea></td>
+      </tr>
+
+      <tr>
+        <td><p>X-flips</p></td>
+        <td><input type="text" name="X_flips" id="X_flips" readonly></td>
+        <td><p>Y-flips</p></td>
+        <td><input type="text" name="Y_flips" id="Y_flips" readonly></td>
+      </tr>
+
+      <tr>
+        <td><p>X values</p></td>
+        <td><textarea name="x_val_array" id="x_val_array_textarea" readonly></textarea></td>
+        <td><p>Y values</p></td>
+        <td><textarea name="y_diff_array" id="y_diff_array_textarea" readonly></textarea></td>
+      </tr>
+
+      <tr>
+        <td><p>X values (1-)</p></td>
+        <td><textarea name="x1_val_array" id="x1_val_array_textarea" readonly></textarea></td>
+        <td><p>AUC array</p></td>
+        <td><textarea name="AUC_array" id="AUC_array_textarea" readonly></textarea></td>
+      </tr>
+      
+      <tr>
+        <td><p>Hypotenuse array</p></td>
+        <td><textarea name="d_length_array" id="d_length_array_textarea" readonly></textarea></td>
+        <td><p>Trajectory length</p></td>
+        <td><input type="text" name="Traj_length" id="Traj_length" readonly></td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+<script>
+
+function draw_picture(){
+  for(i=0;i<(parent.y_array.length-1);i++){    
+    canvas.appendChild(createLine(parent.x_array[i], 
+                                  parent.y_array[i], 
+                                  parent.x_array[i+1], 
+                                  parent.y_array[i+1],
+                                  "red"));
+  }
+  for(i=0;i<(parent.y_array.length-1);i++){    
+    rotated_canvas.appendChild(createLine(rotated_x[i], 
+                                          rotated_y[i],
+                                          rotated_x[i+1],
+                                          rotated_y[i+1],
+                                          "blue"));
+  }
+  for(i=0;i<(every_x_array.length-1);i++){    
+    rotated_canvas.appendChild(createLine(every_x_array[i], 
+                                          every_y_array[i], 
+                                          every_x_array[i+1], 
+                                          every_y_array[i+1],
+                                          "yellow"));
+  }
+}
+
+
+/* Rotation setup */
+
+function rotate(cx, cy, x, y, angle) { // from theftprevention on http://stackoverflow.com/questions/17410809/how-to-calculate-rotation-in-2d-in-javascript
+    var radians = (Math.PI / 180) * angle,
+        cos = Math.cos(radians),
+        sin = Math.sin(radians),
+        nx = (cos * (x - cx)) + (sin * (y - cy)) + cx,
+        ny = (cos * (y - cy)) - (sin * (x - cx)) + cy;
+    return [nx, ny];
+}
+
+/* Calculate general line characteristics */
+
+function calculate_mean(input_array){
+  var sum = 0;
+  array_length = input_array.filter(Number).length;
+  
+  for( var i = 0; i < input_array.length; i++ ){
+    if(!isNaN(parseInt(input_array[i]))){
+      sum += parseInt( input_array[i], 10 ); //don't forget to add the base
+    }
+  }
+  return sum/array_length;
+}
+
+function calculate_sd(input_array){
+  var sd = 0;
+  array_length = input_array.filter(Number).length;
+      
+  for( var i = 0; i < input_array.length; i++ ){
+    if(!isNaN(parseInt(input_array[i]))){
+      sd += Math.pow((Math.abs(parseInt( input_array[i], 10 ) - calculate_mean(input_array))),2); //don't forget to add the base
+    }
+  }
+  return Math.sqrt(sd/(array_length-1));
+}
+
+
+function createLineElement(x, y, length, angle, this_colour) {
+    var line = document.createElement("div");
+    var styles = 'border: 1px solid '+ this_colour +'; '
+               + 'width: ' + length + 'px; '
+               + 'height: 0px; '
+               + '-moz-transform: rotate(' + angle + 'rad); '
+               + '-webkit-transform: rotate(' + angle + 'rad); '
+               + '-o-transform: rotate(' + angle + 'rad); '  
+               + '-ms-transform: rotate(' + angle + 'rad); '  
+               + 'position: absolute; '
+               + 'top: ' + y + 'px; '
+               + 'left: ' + x + 'px; ';
+    line.setAttribute('style', styles);  
+    return line;
+}
+
+function createLine(x1, y1, x2, y2, this_color) {
+    var a = x1 - x2,
+        b = y1 - y2,
+        c = Math.sqrt(a * a + b * b);
+
+    var sx = (x1 + x2) / 2,
+        sy = (y1 + y2) / 2;
+
+    var x = sx - c / 2,
+        y = sy;
+
+    var alpha = Math.PI - Math.atan2(-b, a);
+    //var this_color = "blue";
+
+    return createLineElement(x, y, c, alpha, this_color);
+}
+
+
+if(typeof(parent.uber_data) == "undefined"){
+    //create it
+    parent.uber_data = {
+        accuracy : [],
+        mean_y: [],
+		std_y: [],
+        max_dev: [],
+		RT: [],
+		AUC_total: [],
+		AUC_diff: [],
+		AUC_above: [],
+		AUC_below: [],
+		x_flips: [],
+		y_flips: [],
+		x_arrays: [],
+        y_arrays: [],
+		timestamps: [],
+		traj_length: [],
+        condition: [],
+        shuffle_type: [],
+    }
+}
+
+
+
+/* Create raw trajectory */
+
+
+/* --- Trajectory and data processing per trial --- */
+
+
+</script>
