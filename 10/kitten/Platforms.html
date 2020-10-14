@@ -1,0 +1,582 @@
+<!--
+    Collector (Garcia, Kornell, Kerr, Blake & Haffey)
+    A program for running experiments on the web
+    Copyright 2012-2016 Mikey Garcia & Nate Kornell
+
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License version 3 as published by
+    the Free Software Foundation.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>
+
+		Kitten release (2019) author: Dr. Anthony Haffey (team@someopen.solutions)
+-->
+<style>
+.logo{
+	height:30px;
+	width:30px;
+}
+#collector_logo,
+#github_logo{
+  display:none;
+}
+#github_dialog{
+  top:200px;
+}
+</style>
+
+<div class="modal" tabindex="-1" role="dialog" id="github_dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Synch with github repository</h5>
+        <button type="button" class="close" onclick='$("#github_dialog").fadeOut()'>
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p class="lead">Put in the information below to allow you to update your online experiments</p>
+        <div class="input-group mb-3">
+          <div class="input-group-prepend">
+            <span class="input-group-text bg-primary text-white">Organisation</span>
+          </div>
+          <select class="form-control" id="select_organisation"></select>
+          <button class="btn btn-primary" id="add_organisation_btn">Add</button>
+
+        </div>
+        <div class="input-group mb-3">
+          <div class="input-group-prepend">
+            <span class="input-group-text bg-primary text-white">Repository's name</span>
+          </div>
+          <select class="form-control" id="select_repository"></select>
+          <button class="btn btn-primary" id="add_repository_btn">Add</button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" id="add_token_btn">Add token</button>
+        <button type="button" class="btn btn-primary" id="create_repo_btn">Create Repo</button>
+        <button type="button" class="btn btn-primary" id="pull_repo_btn">Pull</button>
+        <button type="button" class="btn btn-primary" id="push_repo_btn">Push</button>
+        <button type="button" class="btn btn-primary" id="view_repo_btn">View</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/*
+* Hide github dialog if user presses escape
+*/
+document.onkeydown = function(evt) {
+  evt = evt || window.event;
+  var isEscape = false;
+  if ("key" in evt) {
+    isEscape = (evt.key === "Escape" || evt.key === "Esc");
+  } else {
+    isEscape = (evt.keyCode === 27);
+  }
+  if (isEscape) {
+    $("#github_dialog").fadeOut();
+  }
+};
+
+
+
+
+
+var lazy_organisation_interval = setInterval(function(){
+  if(typeof(master_json) !== "undefined"){
+    clearInterval(lazy_organisation_interval);
+    if(typeof(master_json.github.organisations) == "undefined"){
+      master_json.github.organisations = {};
+    }
+    Object.keys(master_json.github.organisations).forEach(function(organisation){
+      $('#select_organisation').append($('<option>', {
+          value: organisation,
+          text: organisation
+      }));
+    });
+    $("#select_organisation").val(master_json.github.organisation);
+
+    var repos = master_json.github.organisations[master_json.github.organisation].repositories;
+
+    Object.keys(repos).forEach(function(repository){
+      $('#select_repository').append($('<option>', {
+          value: repository,
+          text: repository
+      }));
+    });
+    $("#select_repository").val(master_json.github.repository);
+  }
+},500);
+
+
+$("#add_organisation_btn").on("click",function(){
+  bootbox.prompt("What is the name of the github organisation the repository is/will be in?", function(response){
+    if(typeof(master_json.github.organisations[response]) == "undefined"){
+      master_json.github.organisations[response] = {
+        "repositories" : {}
+      };
+      $('#select_organisation').append($('<option>', {
+        value: response,
+        text: response
+      }));
+    }
+    $("#select_organisation").val(response);
+    master_json.github.organisation = response;
+    /* Empty repository list */
+    $("#select_repository").empty();
+
+    Object.keys(master_json.github.organisations[response].repositories).forEach(function(repository){
+      $('#select_repository').append($('<option>', {
+        value: repository,
+        text: repository
+      }));
+    });
+  });
+});
+
+$("#pull_repo_btn").on("click",function(){
+  var organisation = $("#select_organisation").val();
+  var repository   = $("#select_repository").val();
+
+  bootbox.alert(
+    "Feel free to get a coffee while we pull your github repository <br><br>" +
+    "<table style='margin:10px'>" +
+
+      /*
+      * synching with online repository
+      */
+
+      "<tr>" +
+        "<td>" +
+          '<input class="form-check-input" type="checkbox" value="" id="pull_repo_input">' +
+        "</td>" +
+        "<td>" +
+          "<div id='pull_repo_div'>Synching with online repository</div>" +
+        "</td>" +
+        "<td>" +
+          '<span class="spinner-border text-primary" role="status" id="pull_repo_spinner">' +
+            '<span class="sr-only">Loading...</span>' +
+          '</span>' +
+        "</td>" +
+      "</tr>" +
+    "</table>"
+  );
+
+  setTimeout(function(){
+    var pull_response = Collector.electron.git.pull({
+      "organisation" : organisation,
+      "repository"   : repository
+    });
+    if(pull_response !== "success"){
+      bootbox.alert(pull_response);
+    } else {
+      $("#pull_repo_input").attr("checked",true);
+      $("#pull_repo_div").addClass("text-primary");
+      $("#pull_repo_spinner").hide();
+
+      //refresh the page
+      bootbox.confirm("Do you want to restart Collector so that you can see the changes you've just pulled? (Strongly recommended)", function(response){
+        location.reload();
+      });
+    }
+  },500);
+});
+
+$("#push_repo_btn").on("click",function(){
+  var organisation = $("#select_organisation").val();
+  var repository   = $("#select_repository").val();
+
+  /*
+  * check user has a valid token before anything else
+  */
+  if(Collector.electron.git.token_exists()){
+
+    var bootbox_push = bootbox.alert(
+      "Pushing to your repository<br><br>" +
+    "<table style='margin:10px'>" +
+
+    /*
+    * updating the User folder in the repository
+    */
+
+    "<tr>" +
+    "<td>" +
+      '<input class="form-check-input" type="checkbox" value="" id="update_local_repo_input">' +
+    "</td>" +
+    "<td>" +
+      "<div id='update_local_repo_div'>Updating your local version of the repository</div>" +
+    "</td>" +
+    "<td>" +
+      '<span class="spinner-border text-primary" role="status" id="update_local_repo_spinner">' +
+        '<span class="sr-only">Loading...</span>' +
+      '</span>' +
+    "</td>" +
+    "</tr>" +
+
+
+    /*
+    * upload to the online repo
+    */
+    "<tr>" +
+    "<td>" +
+      '<input class="form-check-input" type="checkbox" value="" id="push_repo_online_input">' +
+    "</td>" +
+    "<td>" +
+      "<div id='push_repo_online_div'>Push your changes to your online repository</div>" +
+    "</td>" +
+    "<td>" +
+      '<span class="spinner-border text-primary" role="status" id="push_repo_online_spinner">' +
+        '<span class="sr-only">Loading...</span>' +
+      '</span>' +
+    "</td>" +
+    "</tr>" +
+
+    "</table>"
+    );
+
+    bootbox.prompt(
+      "Please describe this commit:",
+      function(message){
+        if(message){
+          setTimeout(function(){
+            // copy changes
+            Collector.electron.git.add_changes({
+              "organisation" : organisation,
+              "repository"   : repository
+            });
+            $("#update_local_repo_input").attr(
+              "checked",
+              true
+            );
+            $("#update_local_repo_div").addClass(
+              "text-primary"
+            );
+            $("#update_local_repo_spinner").hide();
+
+            setTimeout(function(){
+              /*
+              * commit and push changes
+              */
+              Collector.electron.git.push({
+                "organisation" : organisation,
+                "repository"   : repository,
+                "message"      : message
+              });
+              $("#push_repo_online_input").attr(
+                "checked",
+                true
+              );
+              $("#push_repo_online_div").addClass(
+                "text-primary"
+              );
+              $("#push_repo_online_spinner").hide();
+            },500);
+          },500);
+        } else {
+          bootbox_push.modal("hide");
+        }
+    });
+  } else {
+    bootbox.alert("You have not yet set up a valid token to manage your github repository with. Please do this by clicking on the <b>Add token</b> button");
+  }
+});
+
+$("#view_repo_btn").on("click",function(){
+  var organisation = $("#select_organisation").val();
+  var repository   = $("#select_repository").val();
+
+  if(organisation == ""){
+    organisation = username;
+  }
+  window.open('https://www.github.com/' +
+              organisation +
+              '/' +
+              repository,'_blank');
+});
+
+$("#select_organisation").on("change", function(){
+  $("#select_repository").attr("disabled",false);
+  $("#add_repository_btn").attr("disabled",false);
+  master_json.github.organisation = $("#select_organisation").val();
+});
+
+
+$("#select_repository").on("change", function(){
+  master_json.github.repository = $("#select_repository").val();
+});
+
+$("#add_repository_btn").on("click",function(){
+  bootbox.prompt("What is the name of the repository (this can be a new one or one that already exists)", function(repository){
+    if(repository){
+      if(typeof(master_json
+                  .github
+                  .organisations
+                  [$("#select_organisation").val()]
+                  .repositories
+                  [repository]) == "undefined"){
+        $('#select_repository').append($('<option>', {
+          value: repository,
+          text: repository
+        }));
+        master_json
+          .github
+          .organisations
+          [$("#select_organisation").val()]
+          .repositories
+          [repository] = {};
+      }
+      $("#select_repository").val(repository);
+      master_json.github.repository = repository;
+    }
+  });
+});
+
+$("#add_token_btn").on("click",function(){
+  bootbox.prompt("Please copy and paste the authentication token you generated by going <a href='https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token' target='_blank'>here</a>", function(auth_token){
+    Collector.electron.git.add_token(auth_token);
+  });
+});
+
+$("#create_repo_btn").on("click",function(){
+  var select_organisation = $("#select_organisation").val();
+  var select_repository = $("#select_repository").val();
+
+  if(Collector.electron.git.token_exists()){
+    bootbox.alert(
+      "Feel free to get a coffee while we set up your github repository <br><br>" +
+      "<table style='margin:10px'>" +
+
+      /*
+      * create online repository
+      */
+
+      "<tr>" +
+        "<td>" +
+          '<input class="form-check-input" type="checkbox" value="" id="create_repo_online_repo_input">' +
+        "</td>" +
+        "<td>" +
+          "<div id='create_repo_online_repo_div'>Creating your local repository</div>" +
+        "</td>" +
+        "<td>" +
+          '<span class="spinner-border text-primary" role="status" id="create_repo_online_repo_spinner">' +
+            '<span class="sr-only">Loading...</span>' +
+          '</span>' +
+        "</td>" +
+      "</tr>" +
+
+
+      /*
+      * push this folder to your online repository
+      */
+      "<tr>" +
+        "<td>" +
+          '<input class="form-check-input" type="checkbox" value="" id="push_repo_input">' +
+        "</td>" +
+        "<td>" +
+          "<div id='push_repo_div'>Pushing everything to your online repo. (this can take 5+ minutes the first time)</div>" +
+        "</td>" +
+        "<td>" +
+          '<span class="spinner-border text-primary" role="status" id="push_repo_spinner">' +
+            '<span class="sr-only">Loading...</span>' +
+          '</span>' +
+        "</td>" +
+      "</tr>" +
+
+      /*
+      * Make your online repo a github pages website
+      */
+      "<tr>" +
+        "<td>" +
+          '<input class="form-check-input" type="checkbox" value="" id="github_pages_input">' +
+        "</td>" +
+        "<td>" +
+          "<div id='github_pages_div'>Activating your repository as a website you can direct participants to.</div>" +
+        "</td>" +
+        "<td>" +
+          '<span class="spinner-border text-primary" role="status" id="github_pages_spinner">' +
+            '<span class="sr-only">Loading...</span>' +
+          '</span>' +
+        "</td>" +
+      "</tr>" +
+
+      "</table>"
+    );
+    // lazy way for bootbox alert appear at the start
+    setTimeout(function(){
+      response = Collector.electron.git.init({
+        "organisation" : select_organisation,
+        "repository"   : select_repository
+      });
+      if(response == "auth token missing"){
+        bootbox.prompt("Please can you create a token <a href='https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token'>here</a> and paste it below:",function(auth_token){
+          Collector.electron.git.add_token(auth_token);
+        });
+      } else if(response == "success") {
+        $("#create_repo_online_repo_input").attr("checked",true);
+        $("#create_repo_online_repo_div").addClass("text-primary");
+        $("#create_repo_online_repo_spinner").hide();
+
+        setTimeout(function(){
+          var push_response = Collector
+                                .electron
+                                .git
+                                .push({
+            "organisation" : select_organisation,
+            "repository"   : select_repository
+          });
+          if(push_response !== "success"){
+            bootbox.alert(push_response);
+          }
+          $("#push_repo_input").attr("checked",true);
+          $("#push_repo_div").addClass("text-primary");
+          $("#push_repo_spinner").hide();
+
+          setTimeout(function(){
+            var pages_response = Collector
+                                  .electron
+                                  .git
+                                  .pages({
+              "organisation" : select_organisation,
+              "repository"   : select_repository
+            });
+            if(pages_response !== "success"){
+              bootbox.alert(pages_response);
+            }
+            $("#github_pages_input").attr("checked",true);
+            $("#github_pages_div").addClass("text-primary");
+            $("#github_pages_spinner").hide();
+          },500);
+        },500);
+      }
+    },500);
+  } else {
+    bootbox.alert("You have not yet set up a valid token to manage your github repository with. Please do this by clicking on the <b>Add token</b> button");
+  }
+});
+
+
+
+</script>
+
+
+<table id="logout_table">
+	<tr>
+		<td>
+			<a href="" id="authlink" class="button" style="display:none">Authenticate Dropbox</a>
+			<span id="dropbox_account_email" class="account_info text-white">No dropbox account linked yet</span>
+		</td>
+
+		<td>
+			<img class='logo' style="border-radius: 50%; background-color:white; padding:2px" src="../logos/dbx.ico.png" id="dropbox_logo">
+		</td>
+    <td>
+      <span id="save_status" class="text-white"></span>
+    </td>
+		<td>
+			<img class='logo' style="border-radius: 50%; background-color:white; padding:2px" src="../logos/collector.ico.png" id="collector_logo">
+		</td>
+    <td>
+			<img class='logo' style="border-radius: 50%; background-color:white; padding:2px" src="../logos/Github.png" id="github_logo" onclick="$('#github_dialog').fadeIn()">
+		</td>
+	</tr>
+</table>
+
+<div id="github_html"></div>
+
+
+<script>
+
+
+switch(Collector.detect_context()){
+
+  case "localhost":
+    //show the github icon
+    $("#github_logo").show();
+		$("#collector_logo").show();
+    break;
+	case "github":
+  case "server":
+    $("#collector_logo").show();
+    break;
+  default:
+    $("#collector_logo").show(); //this might be redundant
+    break;
+};
+
+
+function highlight_account(element_id){
+  $("#" + element_id).animate(
+    {
+      fontSize:"20px"
+    },
+    {
+      duration:1000,
+      complete:function(){
+        $("#"+element_id).animate(
+          {
+            fontSize:"0px"
+          },
+          {
+            duration:1000
+          }
+        );
+      }
+    }
+  );
+}
+
+$(".logo").hover(function(){
+  var account_id = this.id.replace("logo","account_email");
+  $("#"+account_id).show(500);
+	$("#"+account_id).animate({
+    fontSize:"14px"
+  },500);
+},function(){
+  var account_id = this.id.replace("logo","account_email");
+  $("#"+account_id).animate({
+    fontSize:"0px"
+  },500);
+});
+
+$("#collector_logo").on("click", function(){
+	update_server_table();
+	$("#login_modal").fadeIn();
+});
+
+$("#dropbox_logo").on("click", function(){
+	var dialog = bootbox.dialog({
+	title: 'Dropbox account',
+	message: "<p>Do you want to choose (another) dropbox account or view your dropbox files? <br><br> <b>NOTE</b>: Before logging out, make sure you have saved everything you want to.</p>",
+	buttons: {
+		cancel: {
+			label: "View",
+			className: 'btn-primary',
+			callback: function(){
+				window.open('https://www.dropbox.com/home/Apps/Collector-SOS','_blank');
+			}
+		},
+		noclose: {
+			label: "Select Account",
+			className: 'btn-info',
+			callback: function(){
+				force_reauth_dbx();
+			}
+		},
+		ok: {
+			label: "Cancel",
+			className: 'btn-secondary',
+		}
+	}
+	});
+});
+</script>
+<script src="DropboxInitiate.js"></script>

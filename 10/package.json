@@ -1,0 +1,75 @@
+{
+  "name": "Collector",
+  "version": "3.10.0",
+  "description": "An Open-Source package for online research",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder"
+  },
+  "repository": "https://github.com/electron/electron-quick-start",
+  "keywords": [
+    "Online Research",
+    "quick",
+    "start",
+    "tutorial",
+    "demo"
+  ],
+  "author": "Mikey Garcia, Dr. Nate Kornell, Tyson Kerr, Dr. Adam Blake, Dr. Anthony Haffey",
+  "license": "GNU General Public License",
+  "devDependencies": {
+    "coffee-script": "~1.6.3",
+    "electron": "^10.1.1",
+    "electron-builder": "^22.8.0"
+  },
+  "build": {
+    "appId": "yourappid",
+    "dmg": {
+      "contents": [
+        {
+          "x": 110,
+          "y": 150
+        },
+        {
+          "x": 240,
+          "y": 150,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
+    },
+    "directories": {
+      "buildResources": "resources"
+    },
+    "extraFiles": [
+      "User/**"
+    ],
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ]
+    },
+    "nsis": {
+      "allowToChangeInstallationDirectory": true,
+      "oneClick": false
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "logos/kitten.png"
+    }
+  },
+  "dependencies": {
+    "@octokit/auth": "^2.0.0",
+    "@octokit/auth-token": "^2.4.2",
+    "@octokit/rest": "^17.11.2",
+    "download-git-repo": "^3.0.2",
+    "electron-context-menu": "^2.3.0",
+    "fs": "0.0.1-security",
+    "fs-extra": "^9.0.1",
+    "git-clone": "^0.1.0",
+    "require": "^2.4.20",
+    "simple-git": "^2.20.1"
+  }
+}

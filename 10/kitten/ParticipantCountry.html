@@ -1,0 +1,62 @@
+<style>
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0px;
+}
+
+#chartdiv {
+  width: 100%;
+  height: 100%;
+}
+</style>
+<script>
+	window.jQuery || document.write('<script src="libraries/jquery-3.3.1.min.js"><\/script>');
+</script>
+
+<script src="libraries/ammap.js"></script>
+<script src="libraries/worldLow.js"></script>
+<script src="libraries/ammap_theme_light.js"></script>
+
+<div id="participant_map_everything">
+  <h3 class="text-primary"> This is totally optional, but please select the country you are completing this from and then click on "Submit"</h3>
+  <button id="country_selected" class="btn btn-primary">Submit</button>
+  <div id="chartdiv"></div>
+</div>
+<script>
+
+var map;
+function load_amchart(){
+  map = AmCharts.makeChart("chartdiv", {
+    "type": "map",
+    "theme": "light",
+    "projection": "eckert3",
+    "dataProvider": {
+      "map": "worldLow",
+      "getAreasFromMap": true
+    },
+    "areasSettings": {
+      "selectedColor": "#CC0000",
+      "selectable": true
+    }
+  });
+}
+load_amchart();
+/**
+ * Create the map
+ */
+
+document.getElementById("country_selected").addEventListener("click",function(){
+  $.post("https://script.google.com/macros/s/AKfycbzlKxIo5TsWoN2vd-5M7X2kfbTWZrvZMqwGJY6yzgOhSRWyzvvZ/exec",{
+    country_id   : map.selectedObject.id,
+    country_name : map.selectedObject.title,
+  },function(result){
+    $("#chartdiv").html("");
+    //will always return error
+  })
+  .catch(function(error){
+    $("#participant_map_everything").html("");
+  });
+});
+
+</script>

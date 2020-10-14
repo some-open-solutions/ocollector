@@ -1,0 +1,18 @@
+
+<h1>How did it go?</h1>
+<div class='text-danger'>How smoothly did the experiment go (did it stop or have any problems running?)</div>
+<label><input type='radio' class='experiment_smoothness' value='5_no_problems'>No problems</label><br>
+<label><input type='radio' class='experiment_smoothness' value='4_minor_problems'>Minor problems</label><br>
+<label><input type='radio' class='experiment_smoothness' value='3_moderate_problems'>Moderate problems</label><br>
+<label><input type='radio' class='experiment_smoothness' value='2_major_problems'>Major problems</label><br>
+<label><input type='radio' class='experiment_smoothness' value='1_it_stopped_working'>It stopped working</label><br>
+<input type='hidden' name='experiment_smoothness_val' id='experiment_smoothness_val'/>If you didn't answer 'No problems' above, please describe what went wrong:
+<textarea name='experiment_problems_description'></textarea><br>
+<script>
+$('.experiment_smoothness').on('click',function(){ 
+  $(".experiment_smoothness").prop("checked",false);
+  $(this).prop("checked",true);
+  $('#experiment_smoothness_val').val($(this).val());
+});
+</script>
+<button class='btn btn-primary' onclick='Trial.submit()'>Proceed</button>

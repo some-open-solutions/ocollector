@@ -1,0 +1,160 @@
+<head>
+  <link rel="shortcut icon" type="image/x-icon" href="../logos/collector.ico.png" />
+	<meta charset="utf-8">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+</head>
+<!--
+    Collector (Garcia, Kornell, Kerr, Blake & Haffey)
+    A program for running experiments on the web
+    Copyright 2012-2016 Mikey Garcia & Nate Kornell
+
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License version 3 as published by
+    the Free Software Foundation.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>
+
+	Kitten release (2019-20) author: Dr. Anthony Haffey (team@someopen.solutions)
+-->
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+<!--
+	Publicly available javascript packages
+-->
+<script src="libraries/jquery-3.3.1.min.js"></script>
+<script src="libraries/popper.min.js"></script>
+<script src="libraries/bootstrap.4.0.min.js"></script>
+<script src="libraries/bootbox.5.4.min.js"></script>
+<script src="libraries/dropbox.2.5.13.min.js"></script>
+<script src="libraries/dropbox.dropins.js"></script>
+<script src="libraries/papaparse.4.3.6.min.js"></script>
+<script src="libraries/ace-master/ace.js"></script>
+<script src="libraries/ace-master/ext-language_tools.js"></script>
+<script src="Handsontables/handsontables.full.js"></script>
+
+
+<!--
+  Default files/objects
+-->
+
+<script src="Default\master_json.js"></script>
+
+<!--
+	Publicly available css packages
+-->
+<link rel="stylesheet" type="text/css" href="libraries/bootstrapCollector.css">
+<link rel="stylesheet" type="text/css" href="libraries/bootbox.fix.css">
+
+
+<!--
+	handsontable core code and collector specific code
+-->
+<div id="handsontable_html"></div>
+<script>
+$("#handsontable_html").load("Handsontables/CellEditor.html");
+</script>
+<link rel="stylesheet" type="text/css" href="Handsontables/handsontables.full.css">
+
+<!--
+	Collector specific files
+-->
+<script src= "Handsontables/HandsontablesFunctions.js"></script>
+<script src= "Code/Collector.js"></script>
+<script src= "Tests/RunTests.js"></script>
+<script src= "Code/BrowserCheck.js"></script>
+<script src= "CollectorMap.js"></script>
+<script src= "Code/SessionCheck.js"></script>
+<script> collector_map = this_map(''); </script>
+<link rel="stylesheet" type="text/css" href="Style.css">
+
+<nav class="navbar fixed-top navbar-light bg-primary navbar-expand-lg" id="top_navbar">
+  <div id="logo_div"></div>
+  <div class="collapse navbar-collapse">
+    <ul class="navbar-nav mr-auto">
+      <div id="page_selected"></div>
+    </ul>
+  </div>
+  <a href="https://collectalk.com/categories/bugs-and-errors" target="_blank" style="margin:2px">
+    <button class="btn btn-primary">Report Bug</button>
+  </a>
+  <a href="https://collectalk.com/" target="_blank" style="margin:2px">
+    <button class="btn btn-primary">Forum</button>
+  </a>
+  <a href="https://docs.google.com/document/d/1SKYIJF1dAjMDS6EHUIwfZm2KQVOzx17S6LbU_oSGxdE/edit?usp=sharing" target="_blank" style="margin:2px">
+    <button class="btn btn-primary">Documentation</button>
+  </a>
+  <button class="btn btn-outline-primary bg-white" id="help_btn" style="margin:2px; font-weight:bold">Help</button>
+  <div id="platforms_div"></div>
+</nav>
+<table id="content_table" style="width:100%">
+  <tr>
+    <td id="content_area"></td>
+    <script>
+      var navbar_names  = ["Studies","Surveys","Mods","Data"];
+      var pages         = ["Studies/Studies.html",
+                           "Surveys/Surveys.html",
+                           "Mods/Mods.html",
+                           "Data/Data.html"];
+      navbar_names.forEach(function(this_name,index){
+        $("#content_area").append("<div class='collapse multi-collapse' " +
+																			 "style='width:100%' "+
+																			 "id='collapse_" + this_name +"' >");
+        $("#collapse_" + this_name).load(pages[index]);
+      });
+    </script>
+    <td id="help_area" class="help_class"></td>
+  </tr>
+</table>
+<div id="register_div"></div>
+<script>
+navbar_html = "";
+navbar_names.forEach(function(name,index){
+  navbar_html +=  '<label class="btn btn-primary select_page"' +
+										'id="top_tab_' + name+'" ' +
+										'data-toggle="collapse" ' +
+										'href="#collapse_' + name+'" ' +
+										'role="button" ' +
+										'aria-expanded="false" '+
+										'aria-controls="#collapse_' + name + '">'+
+											'<input type="radio" ' +
+												'style="display:none" ' +
+															 'name="options" ' +
+												'autocomplete="off" >' +
+											name +
+									'</label>';
+});
+$("#page_selected").html(navbar_html);
+
+$(".select_page").on("click",function(){
+	$('.collapse').hide();														 			 // hide everything
+	$("#collapse_" + this.id.replace("top_tab_","")).show(); // show the current page
+  $('.select_page').css("font-weight","normal");					 // make all tabs normal font-weight
+  $(this).css("font-weight","bold");											 // but then make the current tab bold
+  $('.select_page').removeClass("bg-white");
+  $('.select_page').removeClass("text-primary");
+  $(this).addClass("bg-white");
+  $(this).addClass("text-primary");
+});
+$("#help_area").load("Help/Help.html");
+$("#logo_div").load("../logos/logo.html");
+$("#platforms_div").load("Platforms.html");
+$("#register_div").load("Register.html");
+</script>
+<script src="ContextStart.js"></script>
+<script src="MobileCheck.js"></script>
+
+<!--
+	CollectorLive.js starts an automatic check every 30 seconds to make sure that either:
+	- the internet is still connected (if using the dropbox version)
+	- the localhost is still active   (if using the installed version)
+-->
+<script src="Code/CollectorLive.js"></script>

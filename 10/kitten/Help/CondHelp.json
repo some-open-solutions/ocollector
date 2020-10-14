@@ -1,0 +1,50 @@
+{
+  "description":{
+		"subtitle":"deprecated",
+		"text":"please change this column header to <b>name</b>."
+	},
+	"name":{
+		"subtitle":"Name of Condition",
+		"text":"Please don't put any spaces in this name. You can use underscores _ instead though."
+	},
+	"notes":{
+		"subtitle":"Just for you",
+		"text":"This doesn't do anything in the experiment, but you might find it useful for adding any notes you need for each condition."
+	},
+	"stimuli":{
+    "subtitle":"Which Stimuli sheet?",
+    "text":"Stimuli sheets can used as a list of words or media files (images, audio, pictures) that your experiment will use. If you want different lists of stimuli, you need to create a new stimuli sheet. <br><br> If you are developing your experiments online (e.g. on open-collector.org or ocollector.org) ignore the following. If you are developing the experiment on your computer, you should your stimuli sheet in the <b>web/User/Experiments/YOUR EXPERIMENT</b> folder."
+  },
+	"procedure":{
+    "subtitle":"Which Procedure sheet?",
+    "text":"By default, your experiment will use <b>procedure_1.csv</b>, which is a list of the order of trials and settings for each trial. If you want different participants to have different procedures, you will need to create a new procedure sheet, and have separate rows in the condition sheet for each procedure. <br><br> If you are developing your experiments online (e.g. on open-collector.org or ocollector.org) ignore the following. If you are developing the experiment on your computer, you should your procedure sheet in the <b>web/User/Experiments/YOUR EXPERIMENT</b> folder."
+  },
+	"download_at_end":{
+    "subtitle":"Can participant download at the end?",
+    "text":"By default, participants will  be able to download their data at the end of the experiment. This can be turned <b>off</b> if you don't want this. <b class='text-danger'>BUT YOU ALMOST CERTAINLY WANT THIS!!!!</b>"
+  },
+	"participant_id":{
+    "subtitle":"Participants give their ID",
+    "text":"By default, participants will give a <b>participant id</b> (e.g. a Prolific Academic or MTurk ID) at the start of the experiment. Change this setting to either <b>random</b> (recommended) to generate a unique and randomised id for the user, or <b>off</b> (not recommended) for the participant to have the id 'notUnique'. The participant_id influences the name of their data file. If the participant does not put in an ID, they will skip the <b>start_message</b>."
+  },
+	"end_message":{
+    "subtitle":"A message at the very end",
+    "text":"This will replace the default message at the end (which includes their completion code). If you want the participant to see their completion code, do <b>NOT</b> have an <b>end_message</b>. Instead, have an instruct trial at the end of your <b>procedure</b> with whatever you want your last message to be to them, and let them proceed to the default end message and completion code."
+  },
+	"start_message":{
+    "subtitle":"A message at the very start",
+    "text":"This will replace the default message at the start of the experiment. If <b>participant_id</b> is on <b>off</b> or <b>random</b> then this message will be skipped. In this case, start your experiment with an instruct trial with the message you want to be the first thing the participant will see."
+  },
+	"buffer":{
+    "subtitle":"Number of trials you want buffered",
+    "text":"By default, Collector will try to have 5 trials in advance loaded to try to make the experiment run as smoothly as possible. You can change this number to whatever number of trials you want to have in advance"
+  },
+	"fullscreen":{
+    "subtitle":"On or off?",
+    "text":"By default, the experiment will <b>NOT</b> be in Fullscreen mode. Change this to <b>on</b> if you don't want this."
+  },
+	"forward_at_end":{
+		"subtitle":"Where should the participant go next?",
+    "text":"By default, the participant will not be prompted to complete any other links. However, if you want the participant to complete another link after your task then just write the link you want them to go to next in this column"
+	}
+}

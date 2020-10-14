@@ -1,0 +1,845 @@
+<!--
+    Collector (Garcia, Kornell, Kerr, Blake & Haffey)
+    A program for running experiments on the web
+    Copyright 2012-2016 Mikey Garcia & Nate Kornell
+
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License version 3 as published by
+    the Free Software Foundation.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>
+
+		Kitten release (2019) author: Dr. Anthony Haffey (team@someopen.solutions)
+
+-->
+
+<style>
+#data_script_editor{
+	height:500px;
+}
+
+#local_data_btn{
+  display:none;
+}
+
+.delete_server_data_btn,
+.download_server_data_btn,
+.delete_storage_data_btn,
+.download_storage_data_btn,
+.delete_backup_data_btn,
+.download_backup_data_btn,
+.delete_data_btn,
+.download_data_btn{
+  margin:5px;
+}
+
+.key_textarea{
+  width:500px;
+  height:500px;
+}
+
+</style>
+
+
+<script src="libraries/tweetnacl.js"></script>
+<script src="libraries/tweetnacl-utils.js"></script>
+<script src="libraries/crypto-js.min.js"></script>
+
+
+<nav class="navbar navbar-primary bg-white fixed-top fixed-top-2">
+  <span> <!-- to block formatting that puts the next button on the far right -->
+    <button class="btn btn-primary" id="js_decrypt_btn">Decrypt file(s)</button>
+    <input type="file" id="fileToLoad" style="display:none" multiple>
+    <button class="btn btn-primary" onclick="encrypt_obj.change_password()">Change password</button>
+    <button class="btn btn-primary" id="google_script_btn">Google Script</button>
+    <button class="btn btn-primary" id="local_data_btn">Local Data</button>
+  </span>
+</nav>
+
+
+
+<script>
+$("#fileToLoad").on("change",function(){
+  if($("#fileToLoad").val() !== ""){
+    loadFileAsText();
+  }
+});
+
+$("#google_script_btn").on("click",function(){
+  $.get("Data/Google/CollectorSave.txt",function(google_script){
+    bootbox.alert("//Select and copy the following to a <b>google apps script</b>: <br><br><textarea style='white-space: pre-wrap;' onclick='this.focus();this.select()' readonly='readonly'>" + google_script + "</textarea>");
+  })
+});
+
+$("#js_decrypt_btn").on("click",function(){
+  $("#fileToLoad").val("");
+  $("#fileToLoad").click();
+});
+
+switch(Collector.detect_context()){
+  case "localhost":
+    $("#local_data_btn").show(500);
+    $("#local_data_btn").on("click",function(){
+      //open windows explorer window
+
+    });
+    break;
+}
+
+
+
+function loadFileAsText(){
+	encrypt_obj.current_batch = [];
+  function batch_no_batch(batch_no){
+    if(batch_no == -1){
+      batch_no = 0;
+    }
+    if(document.getElementById("fileToLoad").files.length > batch_no + 1){
+			batch_proc   = true;
+      var batch_status = "add";
+    } else {
+			batch_proc   = false;
+      var batch_status = "end";
+    }
+    var fileToLoad = document.getElementById("fileToLoad").files[batch_no];
+    var default_filename = document.getElementById("fileToLoad").files[batch_no]
+                                                                .name
+                                                                .toLowerCase()
+                                                                .replace(".txt","");
+    var fileReader = new FileReader();
+    fileReader.onload = function(fileLoadedEvent){
+        var textFromFileLoaded = fileLoadedEvent.target.result;
+        encrypt_obj._decrypt_request(textFromFileLoaded,        //file_content
+                                     default_filename,
+                                     batch_status);
+
+    };
+
+    fileReader.readAsText(fileToLoad, "UTF-8");
+    if(batch_proc){
+      batch_no++;
+      batch_no_batch(batch_no);
+    }
+  }
+	if(document.getElementById("fileToLoad").files.length > 1){
+    batch_no_batch(0);
+  } else {
+		batch_no_batch(-1);
+  }
+}
+
+</script>
+<br><br><br><br><br>
+<div>
+  <table>
+    <tr>
+      <td>
+        Your Public Key
+      </td>
+      <td>
+        Your encrypted private key
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <textarea class="form-control key_textarea" id="public_key"></textarea>
+      </td>
+      <td>
+        <textarea class="form-control key_textarea" id="private_key"></textarea>
+      </td>
+    </tr>
+  </table>
+</div>
+
+
+<hr>
+<div id="data_management_login">
+  <div class="form-group row">
+    <label for="data_user_email" class="col-sm-2 col-form-label">Email</label>
+    <div class="col-sm-10">
+      <input type="email" class="form-control" id="data_user_email">
+    </div>
+  </div>
+  <div class="form-group row">
+    <label for="data_user_password" class="col-sm-2 col-form-label">Password</label>
+    <div class="col-sm-10">
+      <input type="password" class="form-control" id="data_user_password">
+    </div>
+  </div>
+
+</div>
+<div id="select_server"></div>
+<hr>
+
+<button class="btn btn-primary" id="list_data_btn">Check my data</button>
+<table class="table">
+  <thead>
+    <tr>
+      <th scope="col">Type</th>
+      <th scope="col">Used Space</th>
+      <th scope="col">Available Space</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr class="text-primary">
+      <th scope="row">Server (very short term)</th>
+      <td><span id="used_server_space"></span></td>
+      <td><span id="max_server_space"></span></td>
+    </tr>
+    <tr class="text-success">
+      <th scope="row">Storage (long term)</th>
+      <td><span id="used_storage_space"></span></td>
+      <td><span id="max_storage_space"></span></td>
+    </tr>
+    <tr class="text-info">
+      <th scope="row">Backup (long term)</th>
+      <td><span id="used_backup_space"></span></td>
+      <td><span id="max_backup_space"></span></td>
+    </tr>
+  </tbody>
+</table>
+
+<hr>
+
+<div class="container">
+  <div class="row">
+    <div class="col-sm">
+      <h1 class='text-primary'>Server</h1>
+      <div id="server_data"></div>
+    </div>
+    <div class="col-sm">
+      <h1 class='text-success'>Storage</h1>
+      <div id="storage_data"></div>
+    </div>
+    <div class="col-sm">
+      <h1 class='text-info'>Backup</h1>
+      <div id="backup_data"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+
+function populate_data_div(data_div_id,
+                           data_obj,
+                           bootstrap_class){
+  server_data_html = '<div class="accordion" id="accordionExample">';
+  Object.keys(data_obj).forEach(function(experiment_name,
+                                         collapse_no){
+    console.dir("experiment_name");
+    console.dir(experiment_name);
+    if(Object.keys(data_obj[experiment_name]).length > 0){
+      server_data_html += '<div class="card" type="button" data-toggle="collapse" data-target="#' + data_div_id + '_' + collapse_no +'" aria-expanded="true" aria-controls="collapseOne">' +
+        '<div class="card-header text-white bg-' + bootstrap_class +'">' +
+          '<h5 class="mb-0">' +
+            experiment_name +
+          '</h5>' +
+        '</div>' +
+        '<div id="' + data_div_id + '_' + collapse_no +'" class="collapse" aria-labelledby="headingOne" data-parent="#accordionExample">' +
+          '<div class="card-body">';
+
+      server_data_html += "<button style='width:100%'>Download All</button>"; //need to make this actually work
+      server_data_html += "<button style='width:100%'>Delete All</button>"; //need to make this actually work
+      server_data_html += "<table>";
+
+
+
+      Object.keys(data_obj[experiment_name]).forEach(function(this_participant){
+        if(data_obj[experiment_name][this_participant].all_data){
+          file_info = data_obj[experiment_name][this_participant].all_data;
+        } else {
+          console.dir("data_obj[experiment_name][this_participant]");
+          console.dir(data_obj[experiment_name][this_participant]);
+          file_info = Object.values(data_obj[experiment_name][this_participant].files).join("|");
+        }
+
+        server_data_html +=
+          "<tr>"    +
+            "<td>"  +
+              this_participant +
+              " - " +
+              data_obj[experiment_name][this_participant].size +
+              " bytes " +
+            "</td>" +
+            "<td>"  +
+
+              "<button class='btn btn-" + bootstrap_class + " download_" + data_div_id + "_btn'>Download<span style='display:none'>" + experiment_name + "_____" + this_participant + "_____" + file_info + "</span></button>" +
+
+            "</td>" +
+            "<td>"  +
+              "<button class='btn btn-danger delete_" + data_div_id + "_btn'>Delete<span style='display:none'>" + experiment_name + "_____" + this_participant  + "_____" + file_info + "</span></button>" +
+            "</td>" +
+          "</tr>";
+      });
+
+      server_data_html += "</table>";
+
+      server_data_html +=     '</div>' +
+                            '</div>' +
+                          '</div>';
+    }
+  });
+  $("#" + data_div_id).html(server_data_html);
+}
+var data_stuff;
+function request_data_list(){
+  $.post(master_json.data.servers[$("#select_data_server").val()].registration_url,{
+    email:    $("#data_user_email").val(),
+    password: $("#data_user_password").val(),
+    action:   "list_data"
+  },function(result){
+    data_stuff = result;
+    try{
+      var mega_data_obj = JSON.parse(result);
+      var server_data_obj  = mega_data_obj.server_info.used_space;
+
+      var used_server_space_mb = 0;
+      Object.keys(server_data_obj).forEach(function(this_experiment){
+        Object.keys(server_data_obj[this_experiment]).forEach(function(this_pp){
+          used_server_space_mb += server_data_obj[this_experiment][this_pp].size;
+        });
+      });
+      used_server_space_mb = used_server_space_mb/1000000;
+
+      $("#used_server_space").html(used_server_space_mb + " MB");
+      $("#max_server_space").html((mega_data_obj.server_info.max_space) + " MB");
+
+
+      populate_data_div("server_data",
+                        server_data_obj,
+                        "primary");
+
+      if(typeof(mega_data_obj.storage_info) !== "undefined"){
+
+        var storage_data_obj = mega_data_obj.storage_info.used_space;
+
+        /*
+        need to tidy this up to merge files where appropriate to make participants
+        */
+
+        Object.keys(storage_data_obj).forEach(function(this_experiment){
+          var participant_list = [];
+          Object.keys(storage_data_obj[this_experiment]).forEach(function(raw_participant){
+            var all_data_pp = raw_participant.split("_all_data.").length == 2 ? true : false;
+
+            this_participant = raw_participant.split("_trial_")[0]
+                                              .split("_all_data.")[0];
+            if(typeof(participant_list[this_participant]) == "undefined"){
+              participant_list[this_participant] = {
+                all_data: all_data_pp,
+                files:    [raw_participant],
+                size:     parseFloat(storage_data_obj[this_experiment][raw_participant].size)
+              };
+            } else if(all_data_pp) {
+              participant_list[this_participant].all_data = true;
+              participant_list[this_participant].size += parseFloat(storage_data_obj[this_experiment][raw_participant].size);
+            } else {
+              participant_list[this_participant].size += parseFloat(storage_data_obj[this_experiment][raw_participant].size);
+              participant_list[this_participant].files.push(raw_participant);
+            }
+          });
+          storage_data_obj[this_experiment] = participant_list;
+        });
+
+
+        var used_storage_space_gb = 0;
+        Object.keys(storage_data_obj).forEach(function(this_experiment){
+          Object.keys(storage_data_obj[this_experiment]).forEach(function(this_pp){
+            used_storage_space_gb += parseFloat(storage_data_obj[this_experiment][this_pp].size);
+          });
+        });
+        used_storage_space_gb = used_storage_space_gb/1000000000;
+
+        $("#used_storage_space").html(used_storage_space_gb + " GB");
+        $("#max_storage_space").html((mega_data_obj.storage_info.max_space) + " GB");
+
+        populate_data_div("storage_data",
+                          storage_data_obj,
+                          "success");
+      }
+
+
+      $(".delete_server_data_btn").unbind();
+      $(".delete_server_data_btn").on("click",function(){
+        var this_folder = $(this).find("span")[0].innerHTML;
+        $.post(master_json.data.servers[$("#select_data_server").val()].registration_url,{
+          email:       $("#data_user_email").val(),
+          password:    $("#data_user_password").val(),
+          action:      "delete_server_data",
+          this_folder: this_folder
+        },function(result){
+          bootbox.alert(result);
+          $("#list_data_btn").click();
+        });
+      });
+      $(".download_server_data_btn").unbind();
+      $(".download_server_data_btn").on("click",function(){
+        var this_folder = $(this).find("span")[0].innerHTML;
+        $.post(master_json.data.servers[$("#select_data_server").val()].registration_url,{
+          email:       $("#data_user_email").val(),
+          password:    $("#data_user_password").val(),
+          action:      "download_server_data",
+          this_folder: this_folder
+        },function(result){
+          if(result == "verification of user and password failed"){
+            bootbox.alert("verification of user and password failed");
+          } else {
+            var encrypted_data = JSON.parse(result);
+            var listed_data = [];
+            Object.keys(encrypted_data).forEach(function(row_name){
+              listed_data.push(JSON.parse(encrypted_data[row_name]));
+            });
+            encrypt_obj.current_batch = [];
+            //var textFromFileLoaded = listed_data.pop();
+            for(var i = 0; i < listed_data.length; i++){
+              if(i == listed_data.length - 1){
+                encrypt_obj._decrypt_request(JSON.stringify(listed_data[i]),        //file_content
+                                             this_folder.split("_____")[1],
+                                             "none");
+              } else {
+                encrypt_obj._decrypt_request(JSON.stringify(listed_data[i]),        //file_content
+                                             this_folder.split("_____")[1],
+                                             "add");
+              }
+            }
+          }
+        });
+      });
+      $(".download_storage_data_btn").unbind();
+      $(".download_storage_data_btn").on("click",function(){
+        var this_folder = $(this).find("span")[0].innerHTML;
+        $.post(master_json.data.servers[$("#select_data_server").val()].registration_url,{
+          email:       $("#data_user_email").val(),
+          password:    $("#data_user_password").val(),
+          action:      "download_storage_data",
+          this_folder: this_folder
+        },function(result){
+          console.dir(result);
+          var encrypted_data = JSON.parse(result);
+          var listed_data = [];
+          Object.keys(encrypted_data).forEach(function(row_name){
+            Object.keys(encrypted_data[row_name]).forEach(function(trial_row){
+              listed_data.push(JSON.parse(encrypted_data[row_name][trial_row]));
+            });
+          });
+
+          encrypt_obj.current_batch = [];                                         // reset the current batch
+          for(var i = 0; i < listed_data.length; i++){
+            if(i == listed_data.length - 1){
+              encrypt_obj._decrypt_request(JSON.stringify(listed_data[i]),        //file_content
+                                           this_folder.split("_____")[1],
+                                           "none");
+            } else {
+              encrypt_obj._decrypt_request(JSON.stringify(listed_data[i]),        //file_content
+                                           this_folder.split("_____")[1],
+                                           "add");
+            }
+          }
+        });
+      });
+      $(".delete_storage_data_btn").unbind();
+      $(".delete_storage_data_btn").on("click",function(){
+        var this_folder = $(this).find("span")[0].innerHTML;
+        $.post(master_json.data.servers[$("#select_data_server").val()].registration_url,{
+          email:       $("#data_user_email").val(),
+          password:    $("#data_user_password").val(),
+          action:      "delete_storage_data",
+          this_folder: this_folder
+        },function(result){
+          bootbox.alert(result);
+          $("#list_data_btn").click();
+        });
+      });
+    } catch(error){
+      bootbox.alert("Failed to retrieve a list of your files - please double check your password and email address");
+    }
+  });
+}
+
+$("#list_data_btn").on("click",function(){
+
+
+  if($("#data_user_email").val() == ""){
+    bootbox.alert("Please put in your email address that is registered with the server selected.");
+  } else if($("#data_user_password").val() == ""){
+    bootbox.alert("Please put in a password.");
+  } else if($("#select_data_server").val() == null){
+    bootbox.alert("Please select a server");
+  } else {
+
+
+    if(typeof(master_json.data.servers[$("#select_data_server").val()].manage_url) == "undefined"){
+      //fix the lack of a manage_url now (perhaps auto click the update );
+
+
+      // then request list
+      request_data_list();
+
+    } else {
+      //retrieve the data here
+      request_data_list();
+    }
+  }
+
+});
+
+
+encrypt_obj = {
+  _decrypt_request:function(encrypted_content,
+                            default_filename,
+                            batch_status){
+    encrypt_obj.current_batch.push([default_filename, encrypted_content]);
+    switch(batch_status){
+      case "none":
+      case "end":
+        bootbox.prompt({
+          title: "What is your password? (this will never be saved, but is needed)",
+          inputType: "password",
+          callback: function(user_password){
+            if(user_password){
+
+
+              //set up a function that can be called recursively, working through each archived keypair until there are none.
+              function combine_password_key(keys_list,user_password){
+                if(keys_list.length == 0){
+                  bootbox.alert("This password isn't working. Are you sure it's the right password, and that you're decrypting the data with the correct installation of Collector? (i.e. do you have multiple versions of Collector you are conducting research with?");
+                } else {
+                  this_private_key = keys_list.pop();
+                  var decrypted_private_key_obj = CryptoJS.AES.decrypt(master_json.keys.encrypted_private_key, user_password);
+                  try{
+                    var decrypted_private_key = decrypted_private_key_obj.toString(CryptoJS.enc.Utf8);
+                  } catch(error) {
+                    Collector.custom_alert(error + " trying with an archived private key");
+                    combine_password_key(keys_list,user_password);
+                  }
+                  try{
+                    all_decrypted = [];
+                    encrypt_obj.current_batch.map(function([default_filename,encrypted_content]){
+                      this_decrypted_message = JSON.parse(encrypt_obj.decrypt(decrypted_private_key,JSON.parse(encrypted_content)));
+                      this_decrypted_message = this_decrypted_message.map(function(row){
+                        try{
+													row["username"] = default_filename;
+													all_decrypted.push(row);
+												} catch(error){
+													//nothing
+												}
+                      });
+                    });
+                    if(encrypt_obj.current_batch.length > 1){
+                      process_decrypted(all_decrypted,"batch");
+                    } else {
+                      process_decrypted(all_decrypted,"single");
+                    }
+                  } catch(error){
+                    Collector.custom_alert(error + " trying with an archived private key");
+                    combine_password_key(keys_list,user_password);
+                  }
+                }
+              }
+
+              function process_decrypted(this_decrypted_message,batch_single){
+                var response_headers = [];
+                var usernames        = [];
+                for(var i = 0; i < this_decrypted_message.length ; i++) {
+                  decrypted_data = this_decrypted_message[i];
+                  Object.keys(decrypted_data).forEach(function(header){
+                    if(response_headers.indexOf(header) == -1){
+                      response_headers.push(header);
+                    };
+                  });
+                }
+
+                for(var i = 0; i < this_decrypted_message.length; i++){
+                  response_headers.forEach(function(this_header){
+                    if(typeof(this_decrypted_message[i][this_header]) == "undefined"){
+                      this_decrypted_message[i][this_header] = "";
+                    }
+                  });
+                }
+
+
+                for(var i = 0; i < this_decrypted_message.length; i++){
+                  delete(this_decrypted_message[i][""]);   // Delete blank column if present
+                  if(usernames.indexOf(this_decrypted_message[i].username) == -1){
+                    usernames.push(this_decrypted_message[i].username);
+                  }
+                }
+
+                if(usernames.length > 1){
+                  bootbox.confirm("There are multiple participants - would you like separate files for each participant? (press cancel if you would like one big file for all participants)",function(result){
+                    if(result){
+                      function recursive_username_decryption(usernames){
+                        if(usernames.length > 0){
+                          var username = usernames.pop();
+                          this_participant_message = this_decrypted_message.filter(row => row.username == username);
+                          bootbox.prompt({
+                            title: "What would you like to name this file?",
+                            value: username,
+                            callback: function(result) {
+                              if(result){
+                                var filename = result.toLowerCase().replace(".csv","") + ".csv";
+                                Collector.save_data (filename, Papa.unparse(this_participant_message,{
+                                  quotes: false, //or array of booleans
+                                  quoteChar: '"',
+                                  escapeChar: '"',
+                                  delimiter: ",",
+                                  header: true,
+                                  newline: "\r\n",
+                                  skipEmptyLines: true, //or 'greedy',
+                                  columns: null //or array of strings
+                                }));
+                              }
+                            }
+                          });
+                          recursive_username_decryption(usernames);
+                        }
+                      }
+                      recursive_username_decryption(usernames);
+
+                    } else {
+                      //do all participants in one go
+                      default_filename = "batch";
+                      //download the data file here
+                      bootbox.prompt({
+                        title: "What would you like to name this file?",
+                        value: default_filename,
+                        callback: function(result) {
+                          if(result){
+                            var filename = result.toLowerCase().replace(".csv","") + ".csv";
+                            Collector.save_data (filename, Papa.unparse(this_decrypted_message,{
+                              quotes: false, //or array of booleans
+                              quoteChar: '"',
+                              escapeChar: '"',
+                              delimiter: ",",
+                              header: true,
+                              newline: "\r\n",
+                              skipEmptyLines: true, //or 'greedy',
+                              columns: null //or array of strings
+                            }));
+                          }
+                        }
+                      });
+                    }
+                  });
+                } else {
+                  default_filename = usernames[0];
+                  //download the data file here
+                  bootbox.prompt({
+                    title: "What would you like to name this file?",
+                    value: default_filename,
+                    callback: function(result) {
+                      if(result){
+                        var filename = result.toLowerCase().replace(".csv","") + ".csv";
+                        Collector.save_data (filename, Papa.unparse(this_decrypted_message,{
+                          quotes: false, //or array of booleans
+                          quoteChar: '"',
+                          escapeChar: '"',
+                          delimiter: ",",
+                          header: true,
+                          newline: "\r\n",
+                          skipEmptyLines: true, //or 'greedy',
+                          columns: null //or array of strings
+                        }));
+                      }
+                    }
+                  });
+                }
+              }
+              if(typeof(master_json.keys.archived) == "undefined"){
+                master_json.keys.archived = [];
+              }
+							var all_private_keys = []
+              master_json.keys.archived.forEach(function(row){
+                all_private_keys.push(row.encrypted_private_key);
+              });
+              all_private_keys.push(master_json.keys.encrypted_private_key);
+              combine_password_key(all_private_keys,user_password);
+            };
+          }
+        });
+        break;
+      case "add":
+        //do nothing
+        break;
+    }
+  },
+	add_script: function(){
+		bootbox.prompt("Please complete the instructions on how to automatically have your data saved or e-mailed and then copy in the script address below",function(this_url){
+
+			/*
+			this functionality will be in version 1
+      master_json.data.save_script = this_url;
+			*/
+
+    })
+	},
+  archive_keys:function(){
+    var keypair = {
+                    public_key : master_json.keys.public_key,
+                    encrypted_private_key : master_json.keys.encrypted_private_key
+                  };
+    master_json.keys.archived.push(keypair);
+  },
+  change_password:function(){
+    bootbox.dialog({
+      title:"Delete old password",
+      message:"Do you want to delete the old password keys? WARNING IF YOU DO THIS YOU WILL NEVER BE ABLE TO DECRYPT ANY DATA ASSOCIATED WITH THIS PASSWORD AGAIN. If you don't want to delete the old password, but still want a new one, select <b>No</b>",
+      buttons:{
+        yes: {
+          label: "Yes",
+          className: 'btn-danger',
+          callback: function(){
+            encrypt_obj.generate_keys();
+          }
+        },
+        no: {
+          label: "No",
+          className: 'btn-primary',
+          callback: function(){
+            encrypt_obj.archive_keys();
+            encrypt_obj.generate_keys();
+          }
+        },
+        cancel: {
+          label: "Cancel",
+          className: 'btn-secondary',
+          callback: function(){
+            //nothing
+          }
+        },
+      }
+    });
+  },
+  confirm_keys:function(){
+    this_encrypted_message = encrypt_obj.encrypt(receiverPublicKey,"howdy");
+
+    this_encrypted_message = JSON.stringify(this_encrypted_message);
+    this_encrypted_message = JSON.parse(this_encrypted_message);
+
+    bootbox.prompt("Let's quadruple check everything is working - if you put in your password you should see the message 'howdy', which has just been encrypted using your public key",function(user_password){
+      var decrypted_private_key_obj = CryptoJS.AES.decrypt(master_json.keys.encrypted_private_key, user_password);
+      var decrypted_private_key = decrypted_private_key_obj.toString(CryptoJS.enc.Utf8);
+      this_decrypted_message = encrypt_obj.decrypt(decrypted_private_key,this_encrypted_message);
+      bootbox.alert(this_decrypted_message);
+    });
+  },
+  current_batch:[],
+  decrypt: function(receiverSecretKey, encryptedData) {
+    const receiverSecretKeyUint8Array = nacl.util.decodeBase64(
+        receiverSecretKey
+    )
+    const nonce = nacl.util.decodeBase64(encryptedData.nonce)
+    const ciphertext = nacl.util.decodeBase64(encryptedData.ciphertext)
+    const ephemPubKey = nacl.util.decodeBase64(encryptedData.ephemPubKey)
+    const decryptedMessage = nacl.box.open(
+        ciphertext,
+        nonce,
+        ephemPubKey,
+        receiverSecretKeyUint8Array
+    )
+    return nacl.util.encodeUTF8(decryptedMessage)
+  },
+  encrypt: function(receiverPublicKey, msgParams) {  //: string
+    const ephemeralKeyPair = nacl.box.keyPair()
+    const pubKeyUInt8Array =  nacl.util.decodeBase64(receiverPublicKey)
+    const msgParamsUInt8Array = nacl.util.decodeUTF8(msgParams)
+    const nonce = nacl.randomBytes(nacl.box.nonceLength)
+    const encryptedMessage = nacl.box(
+      msgParamsUInt8Array,
+      nonce,
+      pubKeyUInt8Array,
+      ephemeralKeyPair.secretKey
+    )
+    return {
+      ciphertext: nacl.util.encodeBase64(encryptedMessage),
+      ephemPubKey: nacl.util.encodeBase64(ephemeralKeyPair.publicKey),
+      nonce: nacl.util.encodeBase64(nonce),
+      version: "x25519-xsalsa20-poly1305"
+    }
+
+  },
+
+  generate_keys:function(){
+
+
+    //solution at https://medium.com/zinc_work/using-cryptography-tweetnacl-js-to-protect-user-data-intro-tips-tricks-a8e38e1818b5
+    var keypair = nacl.box.keyPair();
+
+    receiverPublicKey = nacl.util.encodeBase64(keypair.publicKey);
+    receiverSecretKey = nacl.util.encodeBase64(keypair.secretKey)
+
+    if(typeof(master_json.keys) == "undefined"){
+      master_json.keys = {
+        archived : []
+      };
+    }
+
+    master_json.keys.public_key = receiverPublicKey;
+
+    if(typeof(encrypt_dialog) == "undefined"){
+      encrypt_dialog = bootbox.prompt("In order to encrypt and decrypt your participants' data, we need a password. Make sure you will remember this password, if you forget it then any data that is encrypted will be lost forever.",function(result){
+        if(result){
+          bootbox.prompt("Let's type in the password one more time, just to be sure",function(result_2){
+            if(result == result_2){
+
+              var encryptedAES = CryptoJS.AES.encrypt(receiverSecretKey, result_2);
+              var encryptedAES_string = encryptedAES.toString();
+              var decrypted = CryptoJS.AES.decrypt(encryptedAES_string, result_2);
+              var plaintext = decrypted.toString(CryptoJS.enc.Utf8);
+
+              if(plaintext == receiverSecretKey){
+                master_json.keys.encrypted_private_key = encryptedAES_string;
+                encrypt_obj.confirm_keys();
+                list_keys();
+              } else {
+                bootbox.alert("Something went wrong with creating your encryption keys");
+              }
+
+            } else {
+              bootbox.alert("Erm, your passwords didnt match, do you want to have another go?");
+              //update this with the relevant code to clarify whether the user wants to have another go.
+
+            }
+          });
+        }
+      });
+    }
+  },
+}
+
+function list_keys(){
+  if(typeof(master_json.keys) !== "undefined" &&
+     typeof(master_json.keys.public_key) !== "undefined" &&
+     master_json.keys.public_key !== ""){
+    $("#public_key").val(master_json.keys.public_key);
+    $("#private_key").val(master_json.keys.encrypted_private_key);
+  } else {
+    encrypt_obj.generate_keys();
+  }
+}
+
+function list_data_servers(){
+  var select_server_html = "<select class='form-control' id='select_data_server'>" +
+                                "<option disabled selected>--Please select a server--</option>";
+  Object.keys(master_json.data.servers).forEach(function(this_server){
+    var this_server_info = master_json.data.servers[this_server];
+
+    if(typeof(this_server_info.registration_url) !== "undefined"){
+
+      select_server_html += "<option>" + this_server + "</option>";
+
+    }
+  });
+  select_server_html += "</select>";
+  $("#select_server").html(select_server_html);
+
+}
+
+</script>

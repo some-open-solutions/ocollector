@@ -1,0 +1,55 @@
+<style>
+#calibration_card{
+  position: absolute;
+  top:0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  margin:auto;
+  width:310px;
+  height:190px;
+  padding:5px;
+  border-style: solid;
+  border-radius: 20px;
+  color:red;
+}
+
+body {
+  transformOrigin: center center;
+}
+</style>
+
+
+<div id="calibration_card">
+  <div>Please zoom in or out until the card on the screen is the same size as as close to possible to a typical card in your wallet.</div>
+  <div>Please do not use a bank card or driving license for this sort of check</div>
+  <button class="btn btn-primary" id="zoom_in_btn">+</button>
+  <button class="btn btn-primary" id="zoom_out_btn">-</button>
+  <button class="btn btn-primary" onclick="Trial.submit()">Proceed</button>
+</div>
+
+<input type="hidden" id="calibration_zoom" name="calibration_zoom"/>
+
+<script>
+
+
+parent.parent.current_zoom = 1;
+
+function zoom_in(){
+  parent.parent.current_zoom += .1;
+  document.body.style.zoom = parent.parent.current_zoom;
+  document.body.style.MozTransform = "scale(" +
+    parent.parent.current_zoom +
+  ")";
+}
+function zoom_out(){
+  parent.parent.current_zoom -= .1;
+  document.body.style.zoom = parent.parent.current_zoom;
+  document.body.style.MozTransform = "scale(" +
+    parent.parent.current_zoom +
+  ")";
+}
+
+document.getElementById("zoom_in_btn").onclick = zoom_in;
+document.getElementById("zoom_out_btn").onclick = zoom_out;
+</script>

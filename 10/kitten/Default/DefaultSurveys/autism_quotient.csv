@@ -1,0 +1,52 @@
+item_name,text,Type,Answers,Values,Score: AQ_Test,Score: Social_Skill,Score: Attention_switching,Score: Communication,Score: Imagination,Score: Attention_to_detail,Optional,btn_width
+Instructions1,<span style='color:#006699'><span style='font-size:20px'>Choose one response that best describes how strongly each item applies to you:</span></span>,Instruct,,,,,,,,,,
+AQ1,I prefer to do things with others rather than on my own.,likert,Definitely agree|Slightly agree|Slightly disagree|Definitely disagree,1|1|0|0,r1,r1,,,,,No,100px
+AQ2,I prefer to do things the same way over and over again.,likert,Definitely agree|Slightly agree|Slightly disagree|Definitely disagree,1|1|0|0,1,,1,,,,No,100px
+AQ3,"If I try to imagine something, I find it very easy to create a picture in my mind.",likert,Definitely agree|Slightly agree|Slightly disagree|Definitely disagree,1|1|0|0,r1,,,,r1,,No,100px
+AQ4,I frequently get so strongly absorbed in one thing that I lose sight of other things.,likert,Definitely agree|Slightly agree|Slightly disagree|Definitely disagree,1|1|0|0,1,,1,,,,No,100px
+AQ5,I often notice small sounds when others do not.,likert,Definitely agree|Slightly agree|Slightly disagree|Definitely disagree,1|1|0|0,1,,,,,1,No,100px
+AQ6,I usually notice car number plates or similar strings of information.,likert,Definitely agree|Slightly agree|Slightly disagree|Definitely disagree,1|1|0|0,1,,,,,1,No,100px
+AQ7,"Other people frequently tell me that what I've said is impolite, even though I think it is polite.",likert,Definitely agree|Slightly agree|Slightly disagree|Definitely disagree,1|1|0|0,1,,,1,,,No,100px
+AQ8,"When I'm reading a story, I can easily imagine what the characters might look like.",likert,Definitely agree|Slightly agree|Slightly disagree|Definitely disagree,1|1|0|0,r1,,,,r1,,No,100px
+AQ9,I am fascinated by dates.,likert,Definitely agree|Slightly agree|Slightly disagree|Definitely disagree,1|1|0|0,1,,,,,1,No,100px
+AQ10,"In a social group, I can easily keep track of several different people's conversations.",likert,Definitely agree|Slightly agree|Slightly disagree|Definitely disagree,1|1|0|0,r1,,r1,,,,No,100px
+AQ11,I find social situations easy.,likert,Definitely agree|Slightly agree|Slightly disagree|Definitely disagree,1|1|0|0,r1,r1,,,,,No,100px
+AQ12,I tend to notice details that others do not.,likert,Definitely agree|Slightly agree|Slightly disagree|Definitely disagree,1|1|0|0,1,,,,,1,No,100px
+AQ13,I would rather go to a library than a party.,likert,Definitely agree|Slightly agree|Slightly disagree|Definitely disagree,1|1|0|0,1,1,,,,,No,100px
+AQ14,I find making up stories easy.,likert,Definitely agree|Slightly agree|Slightly disagree|Definitely disagree,1|1|0|0,r1,,,,r1,,No,100px
+AQ15,I find myself drawn more strongly to people than to things.,likert,Definitely agree|Slightly agree|Slightly disagree|Definitely disagree,1|1|0|0,r1,r1,,,,,No,100px
+AQ16,I tend to have very strong interests which I get upset about if I can't pursue.,likert,Definitely agree|Slightly agree|Slightly disagree|Definitely disagree,1|1|0|0,1,,1,,,,No,100px
+AQ17,I enjoy social chit-chat.,likert,Definitely agree|Slightly agree|Slightly disagree|Definitely disagree,1|1|0|0,r1,,,r1,,,No,100px
+AQ18,"When I talk, it isn't always easy for others to get a word in edgeways.",likert,Definitely agree|Slightly agree|Slightly disagree|Definitely disagree,1|1|0|0,1,,,1,,,No,100px
+AQ19,I am fascinated by numbers.,likert,Definitely agree|Slightly agree|Slightly disagree|Definitely disagree,1|1|0|0,1,,,,,1,No,100px
+AQ20,"When I'm reading a story, I find it difficult to work out the characters' intentions.",likert,Definitely agree|Slightly agree|Slightly disagree|Definitely disagree,1|1|0|0,1,,,,1,,No,100px
+AQ21,I don't particularly enjoy reading fiction.,likert,Definitely agree|Slightly agree|Slightly disagree|Definitely disagree,1|1|0|0,1,,,,1,,No,100px
+AQ22,I find it hard to make new friends.,likert,Definitely agree|Slightly agree|Slightly disagree|Definitely disagree,1|1|0|0,1,1,,,,,No,100px
+AQ23,I notice patterns in things all the time.,likert,Definitely agree|Slightly agree|Slightly disagree|Definitely disagree,1|1|0|0,1,,,,,1,No,100px
+AQ24,I would rather go to the theatre than a museum.,likert,Definitely agree|Slightly agree|Slightly disagree|Definitely disagree,1|1|0|0,r1,,,,r1,,No,100px
+AQ25,It does not upset me if my daily routine is disturbed.,likert,Definitely agree|Slightly agree|Slightly disagree|Definitely disagree,1|1|0|0,r1,,r1,,,,No,100px
+AQ26,I frequently find that I don't know how to keep a conversation going.,likert,Definitely agree|Slightly agree|Slightly disagree|Definitely disagree,1|1|0|0,1,,,1,,,No,100px
+AQ27,I find it easy to 'read between the lines' when someone is talking to me.,likert,Definitely agree|Slightly agree|Slightly disagree|Definitely disagree,1|1|0|0,r1,,,r1,,,No,100px
+AQ28,"I usually concentrate more on the whole picture, rather than the small details.",likert,Definitely agree|Slightly agree|Slightly disagree|Definitely disagree,1|1|0|0,r1,,,,,r1,No,100px
+AQ29,I am not very good at remembering phone numbers.,likert,Definitely agree|Slightly agree|Slightly disagree|Definitely disagree,1|1|0|0,r1,,,,,r1,No,100px
+AQ30,"I don't usually notice small changes in a situation, or a person's appearance.",likert,Definitely agree|Slightly agree|Slightly disagree|Definitely disagree,1|1|0|0,r1,,,,,r1,No,100px
+AQ31,I know how to tell if someone listening to me is getting bored.,likert,Definitely agree|Slightly agree|Slightly disagree|Definitely disagree,1|1|0|0,r1,,,r1,,,No,100px
+AQ32,I find it easy to do more than one thing at once.,likert,Definitely agree|Slightly agree|Slightly disagree|Definitely disagree,1|1|0|0,r1,,r1,,,,No,100px
+AQ33,"When I talk on the phone, I'm not sure when it's my turn to speak.",likert,Definitely agree|Slightly agree|Slightly disagree|Definitely disagree,1|1|0|0,1,,,1,,,No,100px
+AQ34,I enjoy doing things spontaneously.,likert,Definitely agree|Slightly agree|Slightly disagree|Definitely disagree,1|1|0|0,r1,,r1,,,,No,100px
+AQ35,I am often the last to understand the point of a joke.,likert,Definitely agree|Slightly agree|Slightly disagree|Definitely disagree,1|1|0|0,1,,,1,,,No,100px
+AQ36,I find it easy to work out what someone is thinking or feeling just by looking at their face.,likert,Definitely agree|Slightly agree|Slightly disagree|Definitely disagree,1|1|0|0,r1,r1,,,,,No,100px
+AQ37,"If there is an interruption, I can switch back to what I was doing very quickly.",likert,Definitely agree|Slightly agree|Slightly disagree|Definitely disagree,1|1|0|0,r1,,r1,,,,No,100px
+AQ38,I am good at social chit-chat.,likert,Definitely agree|Slightly agree|Slightly disagree|Definitely disagree,1|1|0|0,r1,,,r1,,,No,100px
+AQ39,People often tell me that I keep going on and on about the same thing.,likert,Definitely agree|Slightly agree|Slightly disagree|Definitely disagree,1|1|0|0,1,,,1,,,No,100px
+AQ40,"When I was young, I used to enjoy playing games involving pretending with other children.",likert,Definitely agree|Slightly agree|Slightly disagree|Definitely disagree,1|1|0|0,r1,,,,r1,,No,100px
+AQ41,"I like to collect information about categories of things (e.g. types of car, types of bird, types of train, types of plant, etc.).",likert,Definitely agree|Slightly agree|Slightly disagree|Definitely disagree,1|1|0|0,1,,,,1,,No,100px
+AQ42,I find it difficult to imagine what it would be like to be someone else.,likert,Definitely agree|Slightly agree|Slightly disagree|Definitely disagree,1|1|0|0,1,,,,1,,No,100px
+AQ43,I like to plan any activities I participate in carefully.,likert,Definitely agree|Slightly agree|Slightly disagree|Definitely disagree,1|1|0|0,1,,1,,,,No,100px
+AQ44,I enjoy social occasions.,likert,Definitely agree|Slightly agree|Slightly disagree|Definitely disagree,1|1|0|0,r1,r1,,,,,No,100px
+AQ45,I find it difficult to work out people's intentions.,likert,Definitely agree|Slightly agree|Slightly disagree|Definitely disagree,1|1|0|0,1,1,,,,,No,100px
+AQ46,New situations make me anxious.,likert,Definitely agree|Slightly agree|Slightly disagree|Definitely disagree,1|1|0|0,1,,1,,,,No,100px
+AQ47,I enjoy meeting new people.,likert,Definitely agree|Slightly agree|Slightly disagree|Definitely disagree,1|1|0|0,r1,r1,,,,,No,100px
+AQ48,I am a good diplomat.,likert,Definitely agree|Slightly agree|Slightly disagree|Definitely disagree,1|1|0|0,r1,r1,,,,,No,100px
+AQ49,I am not very good at remembering people's date of birth.,likert,Definitely agree|Slightly agree|Slightly disagree|Definitely disagree,1|1|0|0,r1,,,,,r1,No,100px
+AQ50,I find it very easy to play games with children that involve pretending.,likert,Definitely agree|Slightly agree|Slightly disagree|Definitely disagree,1|1|0|0,r1,,,,r1,,No,100px
